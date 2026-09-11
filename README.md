@@ -187,6 +187,18 @@
 
 ---
 
+## 作为 Agent Skill 使用
+
+本仓库同时打包了一个 agent skill `yanboc-cv`，可让你的 coding agent（Cursor / Claude Code / OpenCode / Copilot / Zed 等）自动「从零生成、按格式填写、编译」这份中文简历。
+
+- Skill 唯一事实来源在 [`skills/yanboc-cv/`](skills/yanboc-cv/)（`SKILL.md` + `reference/` 命令与配置目录）。
+- 各 harness 的安装方式见 [INSTALL.md](INSTALL.md)。
+- 给 agent 的仓库维护约定见 [AGENTS.md](AGENTS.md)。
+
+skill 只教 agent「怎么填模板」，不打包模板源码或字体；生成简历时会自动 `git clone` 本仓库作为骨架。
+
+---
+
 ## 贡献与联系方式
 
 - 欢迎通过 **Pull Request** 或 **Issues** 提出建议与修改。

@@ -1,0 +1,9 @@
+{
+  "name": "yanboc-cv",
+  "version": "0.1.0",
+  "description": "Generate, fill, and compile a modular Chinese academic CV (中文简历) with the yanboc LaTeX template. Low-code add* commands, themable colors/fonts.",
+  "author": {
+    "name": "yanboc",
+    "url": "https://github.com/yanboc"
+  }
+}

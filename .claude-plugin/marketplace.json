@@ -1,0 +1,16 @@
+{
+  "$schema": "https://www.schemastore.org/claude-code-marketplace.json",
+  "name": "yanboc-cv",
+  "description": "Generate, fill, and compile a modular Chinese academic CV with the yanboc LaTeX template.",
+  "owner": {
+    "name": "yanboc"
+  },
+  "plugins": [
+    {
+      "name": "yanboc-cv",
+      "description": "Chinese academic CV skill built on the yanboc LaTeX template.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}
