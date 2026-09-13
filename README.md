@@ -2,7 +2,7 @@
 
 # LaTeX 中文简历模板
 
-![Language: LaTeX](https://img.shields.io/badge/Language-LaTeX-blue) ![Subject: CV/Resume](https://img.shields.io/badge/Subject-CV%2FResume-yellowgreen) ![Author: XHS@吃鱼的虎](https://img.shields.io/badge/Author-XHS%40吃鱼的虎-ff69b4)
+![Language: LaTeX](https://img.shields.io/badge/Language-LaTeX-blue) ![Subject: CV/Resume](https://img.shields.io/badge/Subject-CV%2FResume-yellowgreen) ![Author: XHS@boshikage](https://img.shields.io/badge/Author-XHS%40boshikage-ff69b4)
 
 </div>
 
