@@ -1,0 +1,13 @@
+{
+  "name": "yanboc-cv",
+  "private": true,
+  "type": "module",
+  "description": "HTML A4 CV template: preview server + Chromium vector PDF",
+  "scripts": {
+    "preview": "python3 scripts/preview.py",
+    "pdf": "node scripts/html2pdf.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.55.0"
+  }
+}
