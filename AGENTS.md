@@ -10,7 +10,7 @@
 
 约定用法（**本地 clone**）：**用户填空 → agent 把模块全写进第一页 → 用户在预览里改到满意 → 再出 PDF**。本地可多页：拆页交给 `web/js/app.js`，agent 不要手拆。「排进第一页」不是整份简历只能一页。agent 负责别编造、别抢着分页、别把隐私推进 git。好看与否以预览为准，不以 agent 想象的「专业简历」为准。
 
-**在线演示**固定一页（试版式）：[https://cv.yanboch.com](https://cv.yanboch.com)。线上改动只在用户自己的浏览器里，不写回仓库。多页必须本地预览，见 [README.md](README.md)。
+**在线演示**固定一页（试版式）：[https://yanboc.github.io/yanboc-cv/](https://yanboc.github.io/yanboc-cv/)。线上改动只在用户自己的浏览器里，不写回仓库。多页必须本地预览，见 [README.md](README.md)。
 
 ### 去哪找资源
 

@@ -4,7 +4,7 @@
 
 ![Language: HTML](https://img.shields.io/badge/Language-HTML-blue) ![Subject: CV/Resume](https://img.shields.io/badge/Subject-CV%2FResume-yellowgreen) ![Author: XHS@boshikage](https://img.shields.io/badge/Author-XHS%40boshikage-ff69b4)
 
-**在线试用：** [cv.yanboch.com](https://cv.yanboch.com)。在线固定一页（试版式、阶段/用途模板、点头像、打印 PDF）。本地 clone 后可按 A4 自动拆多页，见「预览与导出」。
+**在线试用：** [yanboc.github.io/yanboc-cv](https://yanboc.github.io/yanboc-cv/)。在线固定一页（试版式、阶段/用途模板、点头像、打印 PDF）。本地 clone 后可按 A4 自动拆多页，见「预览与导出」。
 
 </div>
 
@@ -36,7 +36,7 @@
 
 推荐流程：**用户填信息清单 → agent 排进 A4 页 → 用户在浏览器里微调 → 导出 PDF**。
 
-只想先看版式：打开 [在线演示](https://cv.yanboch.com)（一页模板；侧栏可选阶段/用途）。线上保存写在用户自己的浏览器里，不会改仓库；「打印 / 存 PDF」走系统打印对话框。多页必须本地预览（见下）。
+只想先看版式：打开 [在线演示](https://yanboc.github.io/yanboc-cv/)（一页模板；侧栏可选阶段/用途）。线上保存写在用户自己的浏览器里，不会改仓库；「打印 / 存 PDF」走系统打印对话框。多页必须本地预览（见下）。
 
 ### 预览与导出
 
