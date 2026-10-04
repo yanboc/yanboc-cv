@@ -25,17 +25,18 @@ Agent 在用户确认 `cv-info.md` 后，按本表写入 `web/cv-config.json` �
 | --- | --- |
 | 姓名 | `name` |
 | 阶段 | `academicStage`（博士 / 硕士 / 本科；空=不声明） |
-| 用途 | `cvPurpose`（秋招 / 春招 / 实习 / 日常；空或日常=日常维护） |
+| 用途 | `cvPurpose`（学术 / 求职；空=不声明） |
 | 版本日期 | `cvDate`（`YYYY.MM.DD`；空则预览用当天） |
 | 城市 | `city` |
 | 出生年月 | `birthdate` |
 | 预计毕业时间 | `expectedGraduation` |
 | 研究兴趣 | `researchInterest` |
 | 联系方式展示用 | `contact`（空则用 `phone`） |
-| 邮箱 / 手机 / GitHub / 微信 | `email` `phone` `github` `wechat`；空则对应 `needEmail` 等为 `false` |
-| 学校 / 院系中英文 | `schoolNameCH` `schoolNameEN` `departmentNameCH` `departmentNameEN` |
-| 是否使用校徽 | `useSchoolLogo` |
-| 不用校徽时显示校名 | `useSchoolName`（仅 logo=false 时生效） |
+| 邮箱 / 微信 / 手机 | 写入 `email` `wechat` `phone`，并放进 `footerItems`（默认这三项） |
+| GitHub / 主页等 | 写入对应键，并把类型追加进 `footerItems`；不要手绘图标 |
+| 学校中文名 | `schoolNameCH`；选预设校徽时一并写入 |
+| 学院 / 专业 | 写在教育背景最高学历条目；页眉右侧自动同步。不要再填院系英文来当页眉 |
+| 页眉校徽 | `schoolLogoId`：`whu` 武大 / `hust` 华科 / `wut` 武理 / `upload` 上传 / `none` 不展示 |
 | 是否显示头像 | `needAvatar` |
 | 是否显示水印 | `needWatermark` |
 | 默认主题页眉页脚 | `useDefaultTheme` |
@@ -46,12 +47,10 @@ Agent 在用户确认 `cv-info.md` 后，按本表写入 `web/cv-config.json` �
 
 文档标题（浏览器标签 + 预览侧栏）由 `name` / `academicStage` / `cvPurpose` / `cvDate` 拼出，写入 `<title>` 与侧栏 `data-doc-title`：
 
-- 用途为秋招/春招/实习等：**`{姓名}的{阶段}{用途}简历（{日期}）`**，如 `张三的博士秋招简历（2026.10.03）`
-- 日常维护或不声明阶段：**`{姓名}的简历（{日期}）`**，如 `张三的简历（2026.10.03）`
+- 用途为学术/求职：**`{姓名}的{阶段}{用途}简历（{日期}）`**，如 `张三的博士求职简历（2026.10.03）`；阶段为空则无阶段二字。
+- 阶段与用途皆空：**`{姓名}的简历（{日期}）`**，如 `张三的简历（2026.10.03）`
 
-阶段只在「用途被声明」时进入标题。
-
-个人信息表：默认两行（姓名/城市、出生年月/联系方式）。自定字段标题与内容均非空则追加一行；2 字标题用全角空格撑齐（如 `姓　　名`）。
+个人信息表栏目两端对齐到最长栏目名宽度。页眉校徽在侧栏选武大 / 华科 / 武理，或「上传…」「不展示校徽」。
 
 ## 模块 → `web/index.html`
 

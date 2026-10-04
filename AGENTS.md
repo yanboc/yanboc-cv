@@ -8,7 +8,7 @@
 
 任意 agent 把本仓 clone（或下载）到本地，读这一份就能干活。不要再去装某个 chat 产品的 skill / plugin。
 
-约定用法（**本地 clone**）：**用户填空 → agent 把模块全写进第一页 → 用户在预览里改到满意 → 再出 PDF**。本地可多页：拆页交给 `web/js/app.js`，agent 不要手拆。「排进第一页」不是整份简历只能一页。agent 负责别编造、别抢着分页、别把隐私推进 git。好看与否以预览为准，不以 agent 想象的「专业简历」为准。
+约定用法（**本地 clone**）：**用户填空 → agent 把模块全写进第一页 → 用户在预览里改到满意 → 再出 PDF**。网页也可在**侧栏按块填空**（点模块展开第二层），不点纸面编辑。本地可多页：拆页交给 `web/js/app.js`，agent 不要手拆。「排进第一页」不是整份简历只能一页。agent 负责别编造、别抢着分页、别把隐私推进 git。好看与否以预览为准，不以 agent 想象的「专业简历」为准。
 
 **在线演示**固定一页（试版式）：[https://yanboc.github.io/yanboc-cv/](https://yanboc.github.io/yanboc-cv/)。线上改动只在用户自己的浏览器里，不写回仓库。多页必须本地预览，见 [README.md](README.md)。
 
@@ -34,7 +34,7 @@
 | `web/index.html`                 | 每个 `.page` 一张 A4             |
 | `web/cv-config.json`             | 学校、联系方式、开关、主题、行距             |
 | `web/css/cv.css` `web/js/app.js` | 样式和翻页/拆页；用户没要求就别改            |
-| `web/images/`                    | 页眉页脚图、校徽、水印                  |
+| `web/images/`                    | 页眉页脚图、校徽（`logos/` 武大/华科/武理）、水印 |
 | `web/fonts/`                     | 默认狮尾四季春（OFL，随仓走）             |
 | `scripts/preview.py`             | 本地预览，保存写回 HTML               |
 | `scripts/html2pdf.mjs`           | Chromium 打印成 `output/cv.pdf` |
@@ -58,7 +58,7 @@
 
 ### 原则
 
-- **三个入口**：配置进 json，正文进 HTML 第一页，CSS 默认不动。
+- **三个入口**：配置进 json，正文进 HTML 第一页，页眉页脚也是侧栏块；CSS 默认不动。
 - **清单优先**：空 / 删段 / 「无」= 不需要。用户没回复 **「确认」** 之前，agent 不写 HTML、不出 PDF。用户明确说「直接改 HTML」才跳过清单。
 - **分页**：在线演示固定一页。本地不限页数——agent 把模块全堆在第一页 `.page-body`，拆页交给 `web/js/app.js`。清单上的「分页：是」只是用户给自己的备忘。
 - **图标**：Font Awesome 6，文件在 `web/vendor/fontawesome/`。不要手绘 SVG mask。
@@ -79,7 +79,7 @@
 
 - 全局 → `web/cv-config.json`
 - 模块 → `.page-body`，骨架见 [docs/module-commands.md](docs/module-commands.md)
-- 标题：用户声明了阶段和用途（如博士、秋招）写成 `{姓名}的{阶段}{用途}简历（{日期}）`；日常或不声明阶段写成 `{姓名}的简历（{日期}）`。写入 `<title>`，侧栏会跟着变
+- 标题：用户声明了阶段和用途（如博士、求职）写成 `{姓名}的{阶段}{用途}简历（{日期}）`；阶段或用途为空则省略该项；都空写成 `{姓名}的简历（{日期}）`。写入 `<title>`，侧栏会跟着变
 - 某一整节都空 → 不要输出那个 `data-module`
 - 只写第一页。从第二页起页眉页脚由脚本复制。`cv-info.md` 留着，用户以后说「同步」再跑一遍
 

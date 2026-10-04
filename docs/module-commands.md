@@ -4,12 +4,12 @@
 
 ```html
 <section class="page theme-image">
-  <header class="page-header">…校徽与院系…</header>
+  <header class="page-header" data-module="header">…校徽（预设或上传）；学院｜专业由最高学历同步…</header>
   <div class="watermark"><img data-watermark alt=""></div>
   <div class="page-body">
     <!-- 模块 -->
   </div>
-  <footer class="page-footer">…联系方式…</footer>
+  <footer class="page-footer" data-module="footer"></footer>
 </section>
 ```
 

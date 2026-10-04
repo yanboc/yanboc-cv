@@ -5,7 +5,14 @@ const state = {
   pages: [],
   viewScale: null,
   lastOuter: { w: window.outerWidth, h: window.outerHeight },
+  moduleStash: new Map(),
 };
+
+const SCHOOL_LOGOS = [
+  { id: "whu", label: "武大", name: "武汉大学", nameEN: "Wuhan University", src: "images/logos/whu.png" },
+  { id: "hust", label: "华科", name: "华中科技大学", nameEN: "Huazhong University of Science and Technology", src: "images/logos/hust.png" },
+  { id: "wut", label: "武理", name: "武汉理工大学", nameEN: "Wuhan University of Technology", src: "images/logos/wut.svg" },
+];
 
 const RHYTHMS = {
   A: { label: "密", line: 1.15, para: "0.55em", block: "1.25em", title: "0.25em" },
@@ -17,6 +24,14 @@ const RHYTHMS = {
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+function escHtml(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 function applyRhythm(id, opts = {}) {
   const key = RHYTHMS[id] ? id : "E";
@@ -58,6 +73,13 @@ function isOnlineDemo() {
 }
 
 const STORE_AVATAR = "yanboc-cv-avatar";
+const STORE_LOGO = "yanboc-cv-logo";
+const PERSONAL_DEFAULTS = [
+  { label: "姓名", bind: "name" },
+  { label: "所在城市", bind: "city" },
+  { label: "出生年月", bind: "birthdate" },
+  { label: "联系方式", bind: "contact" },
+];
 
 function titleIcon(fa, text) {
   return `<h2 class="module-title"><i class="fa-solid ${fa}" aria-hidden="true"></i>${text}</h2>`;
@@ -69,12 +91,12 @@ function personalHtml() {
     <div class="info-wrap">
       <table class="info-table">
         <tr>
-          <td class="label">姓　　名:</td><td data-bind="name"></td>
-          <td class="label">所在城市:</td><td data-bind="city"></td>
+          <td class="label"><span data-info-label>姓名</span>:</td><td data-bind="name"></td>
+          <td class="label"><span data-info-label>所在城市</span>:</td><td data-bind="city"></td>
         </tr>
         <tr>
-          <td class="label">出生年月:</td><td data-bind="birthdate"></td>
-          <td class="label">联系方式:</td><td data-bind="contact"></td>
+          <td class="label"><span data-info-label>出生年月</span>:</td><td data-bind="birthdate"></td>
+          <td class="label"><span data-info-label>联系方式</span>:</td><td data-bind="contact"></td>
         </tr>
       </table>
       <div class="avatar is-empty" data-avatar><img alt="证件照"></div>
@@ -84,9 +106,9 @@ function personalHtml() {
 
 function eduEntry(degree) {
   return `<article class="entry">
-    <div class="spread"><div><strong class="lg">学校</strong>，${degree}</div><div class="meta">位置</div></div>
-    <div class="spread"><div><u>学院</u>，专业：专业名</div><div class="meta">起止时间</div></div>
-    <div class="note"><strong>综合评价</strong>：在此填写。</div>
+    <div class="spread"><div><strong class="lg" data-f="school">学校</strong>，<span data-f="degree">${escHtml(degree)}</span></div><div class="meta" data-f="location">位置</div></div>
+    <div class="spread"><div><u data-f="college">学院</u>，专业：<span data-f="major">专业名</span></div><div class="meta" data-f="dates">起止时间</div></div>
+    <div class="note"><strong>综合评价</strong>：<span data-f="note">在此填写。</span></div>
   </article>`;
 }
 
@@ -102,20 +124,20 @@ function publicationHtml() {
   return `<section class="module" data-module="publication">
     ${titleIcon("fa-book", "科研成果")}
     <article class="entry">
-      <div>论文标题</div>
-      <div class="spread"><div><strong>姓名</strong>, 合作者</div><div><span class="pub-venue">会议/期刊</span>（状态）</div></div>
+      <div data-f="title">论文标题</div>
+      <div class="spread"><div><strong data-f="authors">姓名</strong></div><div><span class="pub-venue" data-f="venue">会议/期刊</span>（<span data-f="status">状态</span>）</div></div>
     </article>
   </section>`;
 }
 
 function projectsHtml(kind) {
-  const label = kind === "实习" ? "实习项目名称" : "项目或实习名称";
+  const label = kind === "求职" ? "项目或实习名称" : "项目名称";
   return `<section class="module" data-module="projects">
     ${titleIcon("fa-screwdriver-wrench", "项目与实习")}
     <article class="entry">
-      <div class="spread"><div><strong class="lg">${label}</strong></div><div class="meta">类型</div></div>
-      <div class="spread"><div><strong>角色</strong></div><div class="meta">起止时间</div></div>
-      <div class="note">在此填写简介（结果尽量可量化）。</div>
+      <div class="spread"><div><strong class="lg" data-f="name">${escHtml(label)}</strong></div><div class="meta" data-f="kind">类型</div></div>
+      <div class="spread"><div><strong data-f="role">角色</strong></div><div class="meta" data-f="dates">起止时间</div></div>
+      <div class="note" data-f="note">在此填写简介（结果尽量可量化）。</div>
     </article>
   </section>`;
 }
@@ -124,8 +146,8 @@ function skillsHtml() {
   return `<section class="module skills" data-module="skills">
     ${titleIcon("fa-wrench", "技能特长")}
     <ul>
-      <li><strong>语言</strong>：在此填写</li>
-      <li><strong>工具</strong>：在此填写</li>
+      <li><strong data-f="label">语言</strong>：<span data-f="value">在此填写</span></li>
+      <li><strong data-f="label">工具</strong>：<span data-f="value">在此填写</span></li>
     </ul>
   </section>`;
 }
@@ -133,50 +155,47 @@ function skillsHtml() {
 function competitionsHtml() {
   return `<section class="module" data-module="competitions">
     ${titleIcon("fa-trophy", "竞赛经历")}
-    <table class="comp-table"><tr><td>竞赛名称</td><td>角色</td><td>奖项</td><td>时间</td></tr></table>
+    <table class="comp-table"><tr><td data-f="name">竞赛名称</td><td data-f="role">角色</td><td data-f="award">奖项</td><td data-f="time">时间</td></tr></table>
   </section>`;
 }
 
 function honorsHtml() {
   return `<section class="module" data-module="honors">
     ${titleIcon("fa-certificate", "所获荣誉")}
-    <ul class="honors"><li><strong>荣誉名称</strong>（年份）</li></ul>
+    <ul class="honors"><li><strong data-f="name">荣誉名称</strong>（<span data-f="year">年份</span>）</li></ul>
   </section>`;
 }
 
 function othersHtml() {
   return `<section class="module others" data-module="others">
     ${titleIcon("fa-circle-info", "其他")}
-    <ul><li>主页 / 可公开说明</li></ul>
+    <ul><li data-f="text">主页 / 可公开说明</li></ul>
   </section>`;
 }
 
 function modulesFor(stage, purpose) {
   const s = normalizeStage(stage);
-  const p = normalizePurpose(purpose) || "日常";
+  const p = normalizePurpose(purpose);
   const keys = ["personal", "education"];
-  if (s === "博士") {
-    if (p === "实习") keys.push("projects", "skills", "others");
-    else if (p === "日常") keys.push("publication", "others");
-    else keys.push("publication", "projects", "skills");
-  } else if (s === "硕士") {
-    if (p === "实习") keys.push("projects", "skills", "others");
-    else if (p === "日常") keys.push("projects", "publication", "others");
-    else keys.push("publication", "projects", "skills");
-  } else if (s === "本科") {
-    if (p === "实习") keys.push("projects", "skills", "others");
-    else if (p === "日常") keys.push("skills", "honors", "others");
-    else keys.push("projects", "competitions", "skills", "honors");
-  } else if (p === "实习") keys.push("projects", "skills", "others");
-  else if (p === "日常") keys.push("projects", "others");
-  else keys.push("projects", "skills", "honors");
+  if (p === "学术") {
+    keys.push("publication");
+    if (s === "本科") keys.push("honors");
+    keys.push("others");
+  } else if (p === "求职") {
+    if (s === "博士" || s === "硕士") keys.push("publication", "projects", "skills");
+    else if (s === "本科") keys.push("projects", "competitions", "skills", "honors");
+    else keys.push("projects", "skills", "others");
+  } else if (s === "博士") keys.push("publication", "others");
+  else if (s === "硕士") keys.push("projects", "publication", "others");
+  else if (s === "本科") keys.push("skills", "honors", "others");
+  else keys.push("projects", "others");
   return keys;
 }
 
-function renderModules(stage, purpose) {
+function moduleFactory(stage, purpose) {
   const s = normalizeStage(stage);
-  const p = normalizePurpose(purpose) || "日常";
-  const map = {
+  const p = normalizePurpose(purpose);
+  return {
     personal: personalHtml,
     education: () => educationHtml(s),
     publication: publicationHtml,
@@ -186,15 +205,40 @@ function renderModules(stage, purpose) {
     honors: honorsHtml,
     others: othersHtml,
   };
-  return modulesFor(stage, purpose).map((k) => map[k]()).join("");
+}
+
+function renderModules(stage, purpose) {
+  const map = moduleFactory(stage, purpose);
+  return modulesFor(stage, purpose)
+    .map((k) => map[k]())
+    .join("");
 }
 
 function applyPreset(stage, purpose) {
   state.config.academicStage = stage || "";
-  state.config.cvPurpose = purpose || "日常";
+  state.config.cvPurpose = purpose || "";
   state.config.needAvatar = true;
-  const body = $(".page-body");
-  if (body) body.innerHTML = renderModules(stage, purpose);
+  const keys = modulesFor(stage, purpose);
+  const keep = new Map();
+  collectModules().forEach((mod) => {
+    const k = mod.dataset.module;
+    if (k && !keep.has(k)) keep.set(k, mod);
+  });
+  keep.forEach((mod, k) => {
+    if (!keys.includes(k)) state.moduleStash.set(k, mod.outerHTML);
+  });
+  const factory = moduleFactory(stage, purpose);
+  const html = keys
+    .map((k) => {
+      if (keep.has(k)) return keep.get(k).outerHTML;
+      if (state.moduleStash.has(k)) return state.moduleStash.get(k);
+      return factory[k]();
+    })
+    .join("");
+  $$(".page").forEach((page, i) => {
+    const body = $(".page-body", page);
+    if (body) body.innerHTML = i === 0 ? html : "";
+  });
   applyConfig();
   refreshAvatarUi();
   if (isOnlineDemo()) {
@@ -204,6 +248,8 @@ function applyPreset(stage, purpose) {
   } else {
     packPages();
   }
+  refreshFillNav();
+  if (state.fillKey) openFill(state.fillKey);
 }
 
 function refreshAvatarUi() {
@@ -257,6 +303,57 @@ function bindAvatar() {
   });
 }
 
+function bindLogo() {
+  const input = $("#logo-file");
+  if (!input || input.dataset.bound) return;
+  input.dataset.bound = "1";
+  input.addEventListener("change", () => {
+    const file = input.files && input.files[0];
+    input.value = "";
+    if (!file) return;
+    const isSvg = /svg/i.test(file.type) || /\.svg$/i.test(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = String(reader.result || "");
+      const applyCustom = (src) => {
+        state.config.useSchoolLogo = true;
+        state.config.useSchoolName = false;
+        state.config.schoolLogo = src;
+        state.config.schoolLogoId = "upload";
+        persistLogo(src);
+        applyConfig();
+        if (state.fillKey === "header") openFill("header");
+      };
+      if (isSvg || data.startsWith("data:image/svg")) {
+        applyCustom(data);
+        flash("校徽已更新（白/透明底 PNG 或 SVG；仅保存在本机浏览器）");
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        const max = 640;
+        const scale = Math.min(1, max / img.width, max / img.height);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        applyCustom(canvas.toDataURL("image/png"));
+        flash("校徽已更新（建议白/透明底；仅保存在本机浏览器）");
+      };
+      img.src = data;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function persistLogo(data) {
+  try {
+    localStorage.setItem(STORE_LOGO, data);
+  } catch (err) {
+    console.warn(err);
+  }
+}
+
 function pagesHtml() {
   const root = $("#pages");
   if (!root) return "";
@@ -284,6 +381,8 @@ function restoreBrowserDraft() {
     if (cfg) Object.assign(state.config, JSON.parse(cfg));
     const photo = localStorage.getItem(STORE_AVATAR);
     if (photo) state.config.avatarImage = photo;
+    const logo = localStorage.getItem(STORE_LOGO);
+    if (logo) state.config.schoolLogo = logo;
     if (html) {
       const root = $("#pages");
       if (root) root.innerHTML = html;
@@ -322,11 +421,9 @@ function normalizeStage(raw) {
 
 function normalizePurpose(raw) {
   const t = String(raw || "").trim();
-  if (!t || t === "无" || /^日常/.test(t)) return "";
-  if (/秋招/.test(t)) return "秋招";
-  if (/春招/.test(t)) return "春招";
-  if (/实习/.test(t)) return "实习";
-  if (/校招/.test(t)) return "校招";
+  if (!t || t === "-" || t === "无" || /^日常/.test(t)) return "";
+  if (/学术|科研|申博|读博|读研/.test(t)) return "学术";
+  if (/求职|秋招|春招|实习|校招|工作/.test(t)) return "求职";
   return t;
 }
 
@@ -334,7 +431,7 @@ function buildDocTitle(c) {
   const name = String(c.name || "").trim() || "未命名";
   const date = formatCvDate(c.cvDate);
   const purpose = normalizePurpose(c.cvPurpose);
-  const stage = purpose ? normalizeStage(c.academicStage) : "";
+  const stage = normalizeStage(c.academicStage);
   const mid = `${stage}${purpose}`;
   return mid ? `${name}的${mid}简历（${date}）` : `${name}的简历（${date}）`;
 }
@@ -367,28 +464,12 @@ function applyConfig() {
       logo.hidden = !c.useSchoolLogo;
       if (c.schoolLogo) logo.src = c.schoolLogo;
     }
-    if (name) {
-      name.hidden = !(!c.useSchoolLogo && c.useSchoolName);
-      name.textContent = c.schoolNameCH || "";
-    }
-    const dept = $("[data-dept]", page);
-    if (dept) {
-      dept.textContent = `${c.departmentNameCH || ""} | ${c.departmentNameEN || ""}`;
-    }
+    if (name) name.hidden = true;
     const mark = $("[data-watermark]", page);
     if (mark && c.watermarkImage) mark.src = c.watermarkImage;
-
-    setContact(page, "email", c.needEmail, c.email, `mailto:${c.email}`);
-    setContact(page, "phone", c.needPhone, c.phone, null);
-    setContact(
-      page,
-      "github",
-      c.needGithub,
-      c.github,
-      c.github ? `https://github.com/${c.github}` : null
-    );
-    setContact(page, "wechat", c.needWechat, c.wechat, null);
   });
+  syncHeaderDept();
+  applyFooter();
 
   $$("[data-bind]").forEach((el) => {
     const key = el.getAttribute("data-bind");
@@ -399,20 +480,184 @@ function applyConfig() {
     wrap.hidden = !c.needAvatar;
   });
   refreshAvatarUi();
+  syncInfoLabelWidth();
 }
 
-function setContact(page, key, on, text, href) {
-  const el = $(`[data-contact="${key}"]`, page);
-  if (!el) return;
-  el.classList.toggle("is-off", !on || !text);
-  const label = $("[data-contact-text]", el) || el.querySelector("a") || el;
-  if (href && el.querySelector("a")) {
-    const a = el.querySelector("a");
-    a.href = href;
-    a.textContent = text || "";
-  } else if (label) {
-    label.textContent = text || "";
+function absUrl(value) {
+  const t = String(value || "").trim();
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://${t.replace(/^\/+/, "")}`;
+}
+
+function githubHref(value) {
+  const t = String(value || "")
+    .trim()
+    .replace(/^@/, "");
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t)) return t;
+  if (/github\.com\//i.test(t)) return absUrl(t);
+  return `https://github.com/${t.replace(/^\/+/, "")}`;
+}
+
+function linkedinHref(value) {
+  const t = String(value || "").trim();
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t) || /linkedin\.com/i.test(t)) return absUrl(t);
+  return `https://www.linkedin.com/in/${t.replace(/^\/+/, "")}`;
+}
+
+function orcidHref(value) {
+  const t = String(value || "").trim();
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://orcid.org/${t.replace(/^(orcid\.org\/)/i, "")}`;
+}
+
+const FOOTER_CATALOG = {
+  email: {
+    label: "邮箱",
+    icon: "fa-solid fa-envelope",
+    flag: "needEmail",
+    href: (v) => `mailto:${v}`,
+  },
+  wechat: { label: "微信", icon: "fa-brands fa-weixin", flag: "needWechat" },
+  phone: {
+    label: "手机",
+    icon: "fa-solid fa-phone",
+    flag: "needPhone",
+    href: (v) => `tel:${v}`,
+  },
+  github: {
+    label: "GitHub",
+    icon: "fa-brands fa-github",
+    flag: "needGithub",
+    href: githubHref,
+    placeholder: "用户名或链接",
+  },
+  homepage: {
+    label: "主页",
+    icon: "fa-solid fa-globe",
+    href: absUrl,
+    placeholder: "https://",
+  },
+  linkedin: {
+    label: "LinkedIn",
+    icon: "fa-brands fa-linkedin",
+    href: linkedinHref,
+    placeholder: "用户名或链接",
+  },
+  orcid: {
+    label: "ORCID",
+    icon: "fa-brands fa-orcid",
+    href: orcidHref,
+    placeholder: "0000-0000-0000-0000",
+  },
+  scholar: {
+    label: "Google Scholar",
+    icon: "fa-solid fa-graduation-cap",
+    href: absUrl,
+    placeholder: "主页链接",
+  },
+  qq: { label: "QQ", icon: "fa-brands fa-qq" },
+  bilibili: {
+    label: "哔哩哔哩",
+    icon: "fa-brands fa-bilibili",
+    href: absUrl,
+    placeholder: "主页链接",
+  },
+  twitter: {
+    label: "X",
+    icon: "fa-brands fa-x-twitter",
+    href: absUrl,
+    placeholder: "链接",
+  },
+};
+
+const DEFAULT_FOOTER_ITEMS = ["email", "wechat", "phone"];
+
+function getFooterItems() {
+  const c = state.config;
+  if (Array.isArray(c.footerItems)) {
+    return c.footerItems.filter((t) => FOOTER_CATALOG[t]);
   }
+  const out = [];
+  for (const type of Object.keys(FOOTER_CATALOG)) {
+    const flag = FOOTER_CATALOG[type].flag;
+    if ((flag && c[flag]) || String(c[type] || "").trim()) out.push(type);
+  }
+  return out.length ? out : DEFAULT_FOOTER_ITEMS.slice();
+}
+
+function footerItemHtml(type, value) {
+  const spec = FOOTER_CATALOG[type];
+  if (!spec) return "";
+  const val = String(value || "").trim();
+  const off = val ? "" : " is-off";
+  const href = spec.href && val ? spec.href(val) : "";
+  const icon = `<i class="${spec.icon}" aria-hidden="true"></i>`;
+  const text = `<span data-contact-text>${escHtml(val)}</span>`;
+  const inner = href ? `${icon}<a href="${escHtml(href)}">${text}</a>` : `${icon}${text}`;
+  return `<span class="item${off}" data-contact="${type}">${inner}</span>`;
+}
+
+function applyFooter() {
+  const items = getFooterItems();
+  state.config.footerItems = items;
+  $$(".page-footer").forEach((footer) => {
+    footer.innerHTML = items.map((type) => footerItemHtml(type, state.config[type] || "")).join("");
+  });
+}
+
+const DEGREE_RANK = { 博士: 4, 硕士: 3, 本科: 2, 专科: 1, 学位: 0 };
+
+function highestEduDept() {
+  const entries = $$('.module[data-module="education"] .entry');
+  let best = null;
+  let bestR = -1;
+  entries.forEach((el) => {
+    const deg = fieldVal(el, "degree") || el.textContent || "";
+    let r = 0;
+    Object.keys(DEGREE_RANK).forEach((name) => {
+      if (deg.includes(name) && DEGREE_RANK[name] > r) r = DEGREE_RANK[name];
+    });
+    if (r >= bestR) {
+      bestR = r;
+      best = el;
+    }
+  });
+  if (!best) return { college: "", major: "" };
+  let college = fieldVal(best, "college");
+  let major = fieldVal(best, "major");
+  if (!college) college = $("u", best)?.textContent.trim() || "";
+  if (!major) {
+    const m = (best.textContent || "").match(/专业[：:]\s*([^\s，,]+)/);
+    major = m ? m[1] : "";
+  }
+  return { college, major };
+}
+
+function isDeptPlaceholder(value, extras) {
+  const t = String(value || "").trim();
+  if (!t) return true;
+  return extras.includes(t);
+}
+
+function displayDept() {
+  const found = highestEduDept();
+  const college = isDeptPlaceholder(found.college, ["学院"]) ? "" : found.college.trim();
+  const major = isDeptPlaceholder(found.major, ["专业名", "专业"]) ? "" : found.major.trim();
+  return { college, major };
+}
+
+function syncHeaderDept() {
+  const { college, major } = displayDept();
+  if (college) state.config.departmentNameCH = college;
+  state.config.headerMajor = major;
+  const line = [college, major].filter(Boolean).join(" | ");
+  $$("[data-dept]").forEach((el) => {
+    el.textContent = line;
+  });
 }
 
 function collectModules() {
@@ -525,6 +770,7 @@ function packPages() {
     balancePageGutters();
     refreshPages();
     document.documentElement.dataset.packed = "1";
+    refreshFillNav();
     return;
   }
   const pages = $$(".page");
@@ -554,6 +800,7 @@ function packPages() {
   document.body.classList.remove("cv-packing");
   refreshPages();
   document.documentElement.dataset.packed = "1";
+  refreshFillNav();
 }
 
 function refreshPages() {
@@ -690,6 +937,13 @@ function flash(msg) {
 }
 
 function onKey(e) {
+  if (e.target.closest("input, textarea, select, [contenteditable='true']")) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      savePages();
+    }
+    return;
+  }
   if ((e.metaKey || e.ctrlKey) && (e.key === "+" || e.key === "=" || e.key === "-")) {
     e.preventDefault();
     bumpZoom(e.key === "-" ? -0.1 : 0.1);
@@ -722,13 +976,672 @@ function onKey(e) {
 function onClickNav(e) {
   if (isOnlineDemo()) return;
   if (state.editing) return;
-  if (e.target.closest(".hud")) return;
+  if (!e.target.isConnected) return;
+  if (e.target.closest(".hud, .module")) return;
+  const hud = $(".hud");
+  if (hud && e.clientX <= hud.getBoundingClientRect().right) return;
   const deck = $(".deck");
   if (!deck) return;
   const r = deck.getBoundingClientRect();
   const x = (e.clientX - r.left) / r.width;
   if (x < 0.18) show(state.index - 1);
   else if (x > 0.82) show(state.index + 1);
+}
+
+const MODULE_LABEL = {
+  header: "页眉",
+  personal: "个人信息",
+  education: "教育背景",
+  publication: "科研成果",
+  projects: "项目与实习",
+  skills: "技能特长",
+  competitions: "竞赛经历",
+  honors: "所获荣誉",
+  others: "其他",
+  footer: "页脚",
+};
+
+function fieldVal(root, key) {
+  return $(`[data-f="${key}"]`, root)?.textContent.trim() || "";
+}
+
+function firstMod(key) {
+  return $(`.page [data-module="${key}"]`);
+}
+
+function moduleKeysOnPaper() {
+  const seen = new Set();
+  const keys = ["header"];
+  $$(".page-body .module[data-module]").forEach((m) => {
+    const k = m.dataset.module;
+    if (!k || seen.has(k)) return;
+    seen.add(k);
+    keys.push(k);
+  });
+  keys.push("footer");
+  return keys;
+}
+
+function highlightFill(key) {
+  $$(".page [data-module]").forEach((m) => m.classList.toggle("is-fill-target", m.dataset.module === key));
+  $$("[data-module-nav] .hud-mod").forEach((b) => b.classList.toggle("is-on", b.dataset.key === key));
+}
+
+function closeFill() {
+  state.fillKey = "";
+  const pane = $("[data-fill-pane]");
+  if (pane) pane.hidden = true;
+  document.body.classList.remove("hud-fill-open");
+  highlightFill("");
+  fit();
+}
+
+function openFill(key) {
+  if (!key || !firstMod(key)) {
+    closeFill();
+    return;
+  }
+  state.fillKey = key;
+  const pane = $("[data-fill-pane]");
+  const form = $("[data-fill-form]");
+  const title = $("[data-fill-title]");
+  if (!pane || !form) return;
+  pane.hidden = false;
+  document.body.classList.add("hud-fill-open");
+  if (title) title.textContent = MODULE_LABEL[key] || key;
+  form.innerHTML = renderFillForm(key);
+  bindFillForm(form, key);
+  highlightFill(key);
+  fit();
+}
+
+function refreshFillNav() {
+  const nav = $("[data-module-nav]");
+  if (!nav) return;
+  const keys = moduleKeysOnPaper();
+  nav.innerHTML = keys
+    .map(
+      (k) =>
+        `<button type="button" class="hud-mod${state.fillKey === k ? " is-on" : ""}" data-key="${k}">${MODULE_LABEL[k] || k}</button>`
+    )
+    .join("");
+  if (state.fillKey && !keys.includes(state.fillKey)) closeFill();
+  else if (state.fillKey) highlightFill(state.fillKey);
+}
+
+function inp(label, name, value, extra = "") {
+  return `<div class="hud-field"><label>${escHtml(label)}</label><input ${extra} data-name="${escHtml(name)}" value="${escHtml(value)}"></div>`;
+}
+
+function area(label, name, value) {
+  return `<div class="hud-field"><label>${escHtml(label)}</label><textarea data-name="${escHtml(name)}">${escHtml(value)}</textarea></div>`;
+}
+
+function renderFillForm(key) {
+  if (key === "header") return renderHeaderForm();
+  if (key === "footer") return renderFooterForm();
+  if (key === "personal") return renderPersonalForm();
+  if (key === "education") return renderEduForm();
+  if (key === "publication") return renderPubForm();
+  if (key === "projects") return renderProjForm();
+  if (key === "skills") return renderListForm("label", "value", "类别", "内容", parseSkillItems());
+  if (key === "competitions") return renderCompForm();
+  if (key === "honors") return renderHonorForm();
+  if (key === "others") return renderOthersForm();
+  return `<p class="hud-note">这一块还没有侧栏表单。</p>`;
+}
+
+function logoChoice() {
+  const c = state.config;
+  if (!c.useSchoolLogo) return "none";
+  if (c.schoolLogoId && SCHOOL_LOGOS.some((s) => s.id === c.schoolLogoId)) return c.schoolLogoId;
+  const path = String(c.schoolLogo || "");
+  const hit = SCHOOL_LOGOS.find((s) => path === s.src || path.endsWith("/" + s.src));
+  if (hit) return hit.id;
+  if (/school_logo\.png/i.test(path)) return "whu";
+  if (path) return "upload";
+  return "whu";
+}
+
+function applyLogoChoice(value) {
+  const c = state.config;
+  c.useSchoolName = false;
+  if (value === "none") {
+    c.useSchoolLogo = false;
+    c.schoolLogoId = "none";
+    applyConfig();
+    return;
+  }
+  if (value === "upload") {
+    c.schoolLogoId = "upload";
+    c.useSchoolLogo = !!c.schoolLogo;
+    applyConfig();
+    $("#logo-file")?.click();
+    return;
+  }
+  const spec = SCHOOL_LOGOS.find((s) => s.id === value);
+  if (!spec) return;
+  c.useSchoolLogo = true;
+  c.schoolLogoId = spec.id;
+  c.schoolLogo = spec.src;
+  c.schoolNameCH = spec.name;
+  c.schoolNameEN = spec.nameEN;
+  applyConfig();
+}
+
+function renderHeaderForm() {
+  const choice = logoChoice();
+  const { college, major } = displayDept();
+  const sel = (v) => (choice === v ? " selected" : "");
+  const presets = SCHOOL_LOGOS.map(
+    (s) => `<option value="${s.id}"${sel(s.id)}>${escHtml(s.label)}</option>`
+  ).join("");
+  return `<div class="hud-field"><label>校徽</label>
+      <select data-name="schoolLogoChoice">
+        ${presets}
+        <option value="upload"${sel("upload")}>上传…</option>
+        <option value="none"${sel("none")}>不展示校徽</option>
+      </select>
+    </div>
+    ${choice === "upload" ? `<button type="button" class="hud-wide" data-logo-btn>选择文件（白/透明底 PNG 或 SVG）</button>` : ""}
+    <p class="hud-note">右侧「学院 | 专业」自动取最高学历（博士优先于硕士、本科）。请到「教育背景」里改学院和专业。</p>
+    <p class="hud-note">${escHtml(college || "学院")} | ${escHtml(major || "专业")}</p>`;
+}
+
+function writeHeader(form) {
+  const value = form.querySelector('[data-name="schoolLogoChoice"]')?.value || "whu";
+  applyLogoChoice(value);
+}
+
+function renderFooterForm() {
+  const items = getFooterItems();
+  const used = new Set(items);
+  const rows = items
+    .map((type, i) => {
+      const spec = FOOTER_CATALOG[type];
+      const extra = spec.placeholder ? `placeholder="${escHtml(spec.placeholder)}"` : "";
+      return `<div class="hud-entry" data-row="${i}" data-type="${escHtml(type)}">
+        <div class="hud-entry-bar"><span><i class="${spec.icon}" aria-hidden="true"></i> ${escHtml(spec.label)}</span><button type="button" data-del="${i}">−</button></div>
+        ${inp(spec.label, "v", state.config[type] || "", extra)}
+      </div>`;
+    })
+    .join("");
+  const unused = Object.keys(FOOTER_CATALOG).filter((t) => !used.has(t));
+  const menu = unused
+    .map(
+      (t) =>
+        `<button type="button" data-add-type="${t}"><i class="${FOOTER_CATALOG[t].icon}" aria-hidden="true"></i> ${escHtml(FOOTER_CATALOG[t].label)}</button>`
+    )
+    .join("");
+  return `${rows || "<p class=\"hud-note\">页脚还没有联系方式。用下面的 ＋ 添加。</p>"}
+    <div class="hud-add-wrap">
+      <button type="button" class="hud-wide" data-add-menu${unused.length ? "" : " disabled"}>＋ 增加</button>
+      <div class="hud-menu" data-footer-menu hidden>${menu}</div>
+    </div>`;
+}
+
+function writeFooter(form) {
+  const c = state.config;
+  const items = [];
+  $$("[data-row]", form).forEach((row) => {
+    const type = row.dataset.type;
+    if (!FOOTER_CATALOG[type]) return;
+    items.push(type);
+    c[type] = $('[data-name="v"]', row)?.value.trim() || "";
+  });
+  c.footerItems = items;
+  c.needEmail = items.includes("email");
+  c.needPhone = items.includes("phone");
+  c.needGithub = items.includes("github");
+  c.needWechat = items.includes("wechat");
+  applyConfig();
+}
+
+function parsePersonalRows() {
+  const mod = firstMod("personal");
+  if (!mod) {
+    return PERSONAL_DEFAULTS.map((d) => ({
+      ...d,
+      value: state.config[d.bind] || "",
+    }));
+  }
+  const parsed = $$("td.label", mod).map((lab) => {
+    const val = lab.nextElementSibling;
+    const bind = val?.getAttribute("data-bind") || "";
+    const raw = ($("[data-info-label]", lab)?.textContent || lab.textContent || "")
+      .replace(/[:：]/g, "")
+      .replace(/　/g, "")
+      .trim();
+    return { label: raw || "栏目", value: val?.textContent || "", bind };
+  }).filter((r) => r.label);
+  if (!parsed.length) {
+    return PERSONAL_DEFAULTS.map((d) => ({
+      ...d,
+      value: state.config[d.bind] || "",
+    }));
+  }
+  return parsed.map((r) => {
+    if (!r.value && r.bind && state.config[r.bind]) r.value = state.config[r.bind];
+    return r;
+  });
+}
+
+function renderPersonalForm() {
+  const rows = parsePersonalRows();
+  const fields = rows
+    .map(
+      (r, i) =>
+        `<div class="hud-entry" data-row="${i}">
+          <div class="hud-entry-bar">
+            <input class="hud-col-title" data-name="l${i}" value="${escHtml(r.label)}" title="点击修改栏目名">
+            <button type="button" data-del="${i}">−</button>
+          </div>
+          <div class="hud-field"><input data-name="v${i}" value="${escHtml(r.value)}" placeholder="${escHtml(r.label)}"></div>
+          <input type="hidden" data-name="b${i}" value="${escHtml(r.bind)}">
+        </div>`
+    )
+    .join("");
+  return `${fields}<button type="button" class="hud-wide" data-add>＋ 增加栏目</button>
+    <button type="button" class="hud-wide" data-avatar-btn>上传证件照</button>
+    <p class="hud-note">点栏目名可改名。校徽在侧栏「页眉」里选学校，或上传白/透明底 PNG、SVG。</p>`;
+}
+
+function writePersonal(form) {
+  const blocks = $$("[data-row]", form);
+  const rows = blocks.map((el, i) => ({
+    label: $(`[data-name="l${i}"]`, form)?.value.trim() || "栏目",
+    value: $(`[data-name="v${i}"]`, form)?.value || "",
+    bind: $(`[data-name="b${i}"]`, form)?.value || "",
+  }));
+  const known = { name: 1, city: 1, birthdate: 1, contact: 1 };
+  rows.forEach((r) => {
+    if (r.bind && known[r.bind]) state.config[r.bind] = r.value;
+  });
+  const mod = firstMod("personal");
+  if (!mod) return;
+  const table = $("table.info-table", mod);
+  if (!table) return;
+  const cells = rows.map((r) => {
+    const bind = r.bind && known[r.bind] ? ` data-bind="${r.bind}"` : "";
+    return `<td class="label"><span data-info-label>${escHtml(r.label)}</span>:</td><td${bind}>${escHtml(r.value)}</td>`;
+  });
+  let html = "";
+  for (let i = 0; i < cells.length; i += 2) {
+    html += `<tr>${cells[i]}${cells[i + 1] || "<td></td><td></td>"}</tr>`;
+  }
+  table.innerHTML = html || `<tr><td class="label"><span data-info-label>姓名</span>:</td><td data-bind="name"></td></tr>`;
+  syncInfoLabelWidth();
+  applyDocTitle();
+}
+
+function syncInfoLabelWidth() {
+  $$(".info-table").forEach((table) => {
+    const n = $$("[data-info-label]", table).reduce(
+      (m, el) => Math.max(m, (el.textContent || "").trim().length),
+      0
+    );
+    table.style.setProperty("--info-label-n", String(Math.max(n, 2)));
+  });
+}
+
+function renderEduForm() {
+  const entries = $$('.module[data-module="education"] .entry');
+  const list = entries.length ? entries : [];
+  const cards = list
+    .map((el, i) => {
+      const d = {
+        school: fieldVal(el, "school") || "学校",
+        degree: fieldVal(el, "degree") || "学位",
+        location: fieldVal(el, "location") || "",
+        college: fieldVal(el, "college") || "",
+        major: fieldVal(el, "major") || "",
+        dates: fieldVal(el, "dates") || "",
+        note: fieldVal(el, "note") || "",
+      };
+      return `<div class="hud-entry" data-row="${i}">
+        <div class="hud-entry-bar"><span>第 ${i + 1} 段</span><button type="button" data-del="${i}">−</button></div>
+        ${inp("学校", `school${i}`, d.school)}
+        ${inp("学历", `degree${i}`, d.degree)}
+        ${inp("位置", `location${i}`, d.location)}
+        ${inp("学院", `college${i}`, d.college)}
+        ${inp("专业", `major${i}`, d.major)}
+        ${inp("起止时间", `dates${i}`, d.dates)}
+        ${area("综合评价", `note${i}`, d.note)}
+      </div>`;
+    })
+    .join("");
+  return `${cards || "<p class=\"hud-note\">还没有教育条目。</p>"}<button type="button" class="hud-wide" data-add>＋ 增加学历</button>`;
+}
+
+function writeEdu(form) {
+  const n = $$("[data-row]", form).length;
+  const html = Array.from({ length: n }, (_, i) => {
+    const school = $(`[data-name="school${i}"]`, form)?.value || "学校";
+    const degree = $(`[data-name="degree${i}"]`, form)?.value || "学位";
+    const location = $(`[data-name="location${i}"]`, form)?.value || "";
+    const college = $(`[data-name="college${i}"]`, form)?.value || "";
+    const major = $(`[data-name="major${i}"]`, form)?.value || "";
+    const dates = $(`[data-name="dates${i}"]`, form)?.value || "";
+    const note = $(`[data-name="note${i}"]`, form)?.value || "";
+    return `<article class="entry">
+      <div class="spread"><div><strong class="lg" data-f="school">${escHtml(school)}</strong>，<span data-f="degree">${escHtml(degree)}</span></div><div class="meta" data-f="location">${escHtml(location)}</div></div>
+      <div class="spread"><div><u data-f="college">${escHtml(college)}</u>，专业：<span data-f="major">${escHtml(major)}</span></div><div class="meta" data-f="dates">${escHtml(dates)}</div></div>
+      <div class="note"><strong>综合评价</strong>：<span data-f="note">${escHtml(note)}</span></div>
+    </article>`;
+  }).join("");
+  replaceModuleBody("education", html, titleIcon("fa-graduation-cap", "教育背景"));
+}
+
+function renderPubForm() {
+  const entries = $$('.module[data-module="publication"] .entry');
+  const cards = entries
+    .map((el, i) => `<div class="hud-entry" data-row="${i}">
+      <div class="hud-entry-bar"><span>第 ${i + 1} 篇</span><button type="button" data-del="${i}">−</button></div>
+      ${inp("标题", `title${i}`, fieldVal(el, "title") || el.firstElementChild?.textContent || "")}
+      ${inp("作者", `authors${i}`, fieldVal(el, "authors"))}
+      ${inp("会议/期刊", `venue${i}`, fieldVal(el, "venue"))}
+      ${inp("状态", `status${i}`, fieldVal(el, "status"))}
+    </div>`)
+    .join("");
+  return `${cards}<button type="button" class="hud-wide" data-add>＋ 增加论文</button>`;
+}
+
+function writePub(form) {
+  const n = $$("[data-row]", form).length;
+  const html = Array.from({ length: n }, (_, i) => {
+    const title = $(`[data-name="title${i}"]`, form)?.value || "论文标题";
+    const authors = $(`[data-name="authors${i}"]`, form)?.value || "";
+    const venue = $(`[data-name="venue${i}"]`, form)?.value || "";
+    const status = $(`[data-name="status${i}"]`, form)?.value || "";
+    return `<article class="entry">
+      <div data-f="title">${escHtml(title)}</div>
+      <div class="spread"><div><strong data-f="authors">${escHtml(authors)}</strong></div><div><span class="pub-venue" data-f="venue">${escHtml(venue)}</span>（<span data-f="status">${escHtml(status)}</span>）</div></div>
+    </article>`;
+  }).join("");
+  replaceModuleBody("publication", html, titleIcon("fa-book", "科研成果"));
+}
+
+function renderProjForm() {
+  const entries = $$('.module[data-module="projects"] .entry');
+  const cards = entries
+    .map((el, i) => `<div class="hud-entry" data-row="${i}">
+      <div class="hud-entry-bar"><span>第 ${i + 1} 项</span><button type="button" data-del="${i}">−</button></div>
+      ${inp("名称", `name${i}`, fieldVal(el, "name"))}
+      ${inp("类型", `kind${i}`, fieldVal(el, "kind"))}
+      ${inp("角色", `role${i}`, fieldVal(el, "role"))}
+      ${inp("起止时间", `dates${i}`, fieldVal(el, "dates"))}
+      ${area("简介", `note${i}`, fieldVal(el, "note"))}
+    </div>`)
+    .join("");
+  return `${cards}<button type="button" class="hud-wide" data-add>＋ 增加项目</button>`;
+}
+
+function writeProj(form) {
+  const n = $$("[data-row]", form).length;
+  const html = Array.from({ length: n }, (_, i) => `<article class="entry">
+    <div class="spread"><div><strong class="lg" data-f="name">${escHtml($(`[data-name="name${i}"]`, form)?.value || "")}</strong></div><div class="meta" data-f="kind">${escHtml($(`[data-name="kind${i}"]`, form)?.value || "")}</div></div>
+    <div class="spread"><div><strong data-f="role">${escHtml($(`[data-name="role${i}"]`, form)?.value || "")}</strong></div><div class="meta" data-f="dates">${escHtml($(`[data-name="dates${i}"]`, form)?.value || "")}</div></div>
+    <div class="note" data-f="note">${escHtml($(`[data-name="note${i}"]`, form)?.value || "")}</div>
+  </article>`).join("");
+  replaceModuleBody("projects", html, titleIcon("fa-screwdriver-wrench", "项目与实习"));
+}
+
+function parseSkillItems() {
+  return $$('.module[data-module="skills"] li').map((li) => ({
+    label: fieldVal(li, "label") || $("strong", li)?.textContent || "",
+    value: fieldVal(li, "value") || (li.textContent.split("：")[1] || "").trim(),
+  }));
+}
+
+function renderListForm(a, b, la, lb, items) {
+  const cards = items
+    .map(
+      (it, i) => `<div class="hud-entry" data-row="${i}">
+      <div class="hud-entry-bar"><span>第 ${i + 1} 条</span><button type="button" data-del="${i}">−</button></div>
+      ${inp(la, `${a}${i}`, it.label || it[a] || "")}
+      ${area(lb, `${b}${i}`, it.value || it[b] || "")}
+    </div>`
+    )
+    .join("");
+  return `${cards}<button type="button" class="hud-wide" data-add>＋ 增加条目</button>`;
+}
+
+function writeSkills(form) {
+  const n = $$("[data-row]", form).length;
+  const items = Array.from({ length: n }, (_, i) => {
+    const label = $(`[data-name="label${i}"]`, form)?.value || "";
+    const value = $(`[data-name="value${i}"]`, form)?.value || "";
+    return `<li><strong data-f="label">${escHtml(label)}</strong>：<span data-f="value">${escHtml(value)}</span></li>`;
+  }).join("");
+  replaceModuleBody("skills", `<ul>${items}</ul>`, titleIcon("fa-wrench", "技能特长"), "module skills");
+}
+
+function renderCompForm() {
+  const rows = $$('.module[data-module="competitions"] .comp-table tr');
+  const cards = rows
+    .map((el, i) => `<div class="hud-entry" data-row="${i}">
+      <div class="hud-entry-bar"><span>第 ${i + 1} 条</span><button type="button" data-del="${i}">−</button></div>
+      ${inp("竞赛", `name${i}`, fieldVal(el, "name") || el.children[0]?.textContent || "")}
+      ${inp("角色", `role${i}`, fieldVal(el, "role") || el.children[1]?.textContent || "")}
+      ${inp("奖项", `award${i}`, fieldVal(el, "award") || el.children[2]?.textContent || "")}
+      ${inp("时间", `time${i}`, fieldVal(el, "time") || el.children[3]?.textContent || "")}
+    </div>`)
+    .join("");
+  return `${cards}<button type="button" class="hud-wide" data-add>＋ 增加竞赛</button>`;
+}
+
+function writeComp(form) {
+  const n = $$("[data-row]", form).length;
+  const rows = Array.from({ length: n }, (_, i) => `<tr>
+    <td data-f="name">${escHtml($(`[data-name="name${i}"]`, form)?.value || "")}</td>
+    <td data-f="role">${escHtml($(`[data-name="role${i}"]`, form)?.value || "")}</td>
+    <td data-f="award">${escHtml($(`[data-name="award${i}"]`, form)?.value || "")}</td>
+    <td data-f="time">${escHtml($(`[data-name="time${i}"]`, form)?.value || "")}</td>
+  </tr>`).join("");
+  replaceModuleBody("competitions", `<table class="comp-table">${rows}</table>`, titleIcon("fa-trophy", "竞赛经历"));
+}
+
+function renderHonorForm() {
+  const items = $$('.module[data-module="honors"] li').map((li) => ({
+    name: fieldVal(li, "name") || $("strong", li)?.textContent || "",
+    year: fieldVal(li, "year") || "",
+  }));
+  const cards = items
+    .map(
+      (it, i) => `<div class="hud-entry" data-row="${i}">
+      <div class="hud-entry-bar"><span>第 ${i + 1} 条</span><button type="button" data-del="${i}">−</button></div>
+      ${inp("荣誉", `name${i}`, it.name)}
+      ${inp("年份", `year${i}`, it.year)}
+    </div>`
+    )
+    .join("");
+  return `${cards}<button type="button" class="hud-wide" data-add>＋ 增加荣誉</button>`;
+}
+
+function writeHonors(form) {
+  const n = $$("[data-row]", form).length;
+  const items = Array.from({ length: n }, (_, i) => `<li><strong data-f="name">${escHtml($(`[data-name="name${i}"]`, form)?.value || "")}</strong>（<span data-f="year">${escHtml($(`[data-name="year${i}"]`, form)?.value || "")}</span>）</li>`).join("");
+  replaceModuleBody("honors", `<ul class="honors">${items}</ul>`, titleIcon("fa-certificate", "所获荣誉"));
+}
+
+function renderOthersForm() {
+  const items = $$('.module[data-module="others"] li').map((li) => fieldVal(li, "text") || li.textContent.trim());
+  const cards = items
+    .map(
+      (t, i) => `<div class="hud-entry" data-row="${i}">
+      <div class="hud-entry-bar"><span>第 ${i + 1} 条</span><button type="button" data-del="${i}">−</button></div>
+      ${area("说明", `text${i}`, t)}
+    </div>`
+    )
+    .join("");
+  return `${cards}<button type="button" class="hud-wide" data-add>＋ 增加一条</button>`;
+}
+
+function writeOthers(form) {
+  const n = $$("[data-row]", form).length;
+  const items = Array.from({ length: n }, (_, i) => `<li data-f="text">${escHtml($(`[data-name="text${i}"]`, form)?.value || "")}</li>`).join("");
+  replaceModuleBody("others", `<ul>${items}</ul>`, titleIcon("fa-circle-info", "其他"), "module others");
+}
+
+function replaceModuleBody(key, inner, titleHtml, className) {
+  const mods = $$(`.module[data-module="${key}"]`);
+  if (!mods.length) return;
+  const first = mods[0];
+  first.className = className || "module";
+  first.dataset.module = key;
+  first.innerHTML = titleHtml + inner;
+  mods.slice(1).forEach((m) => m.remove());
+  applyConfig();
+  refreshAvatarUi();
+  balancePageGutters();
+  refreshPages();
+}
+
+function applyFill(key, form) {
+  if (key === "header") writeHeader(form);
+  else if (key === "footer") writeFooter(form);
+  else if (key === "personal") writePersonal(form);
+  else if (key === "education") writeEdu(form);
+  else if (key === "publication") writePub(form);
+  else if (key === "projects") writeProj(form);
+  else if (key === "skills") writeSkills(form);
+  else if (key === "competitions") writeComp(form);
+  else if (key === "honors") writeHonors(form);
+  else if (key === "others") writeOthers(form);
+  applyDocTitle();
+}
+
+function bindFillForm(form, key) {
+  if (!form.dataset.bound) {
+    form.dataset.bound = "1";
+    form.addEventListener("input", (e) => {
+      const k = state.fillKey;
+      if (!k) return;
+      if (e.target.matches(".hud-col-title")) {
+        const row = e.target.closest("[data-row]");
+        const v = row?.querySelector('[data-name^="v"]');
+        if (v) v.placeholder = e.target.value;
+      }
+      applyFill(k, form);
+    });
+    form.addEventListener("change", (e) => {
+      const k = state.fillKey;
+      if (!k) return;
+      applyFill(k, form);
+      if (e.target.matches('[data-name="schoolLogoChoice"]')) openFill(k);
+    });
+    form.addEventListener("click", onFillFormClick);
+  }
+}
+
+function onFillFormClick(e) {
+  e.stopPropagation();
+  const form = $("[data-fill-form]");
+  const key = state.fillKey;
+  if (!form || !key) return;
+  const add = e.target.closest("[data-add]");
+  const del = e.target.closest("[data-del]");
+  const av = e.target.closest("[data-avatar-btn]");
+  const logoBtn = e.target.closest("[data-logo-btn]");
+  const addMenu = e.target.closest("[data-add-menu]");
+  const addType = e.target.closest("[data-add-type]");
+  if (av) {
+    $("#avatar-file")?.click();
+    return;
+  }
+  if (logoBtn) {
+    $("#logo-file")?.click();
+    return;
+  }
+  if (addMenu) {
+    const menu = form.querySelector("[data-footer-menu]");
+    if (menu) menu.hidden = !menu.hidden;
+    return;
+  }
+  if (addType) {
+    applyFill(key, form);
+    const type = addType.getAttribute("data-add-type");
+    const items = getFooterItems();
+    if (type && FOOTER_CATALOG[type] && !items.includes(type)) items.push(type);
+    state.config.footerItems = items;
+    applyConfig();
+    openFill(key);
+    return;
+  }
+  if (add) {
+    applyFill(key, form);
+    if (key === "personal") {
+      const table = $("table.info-table", firstMod("personal"));
+      if (table) {
+        table.insertAdjacentHTML(
+          "beforeend",
+          `<tr><td class="label"><span data-info-label>新栏目</span>:</td><td></td></tr>`
+        );
+      }
+    } else if (key === "education") {
+      firstMod("education")?.insertAdjacentHTML("beforeend", eduEntry("学位"));
+    } else if (key === "publication") {
+      firstMod("publication")?.insertAdjacentHTML(
+        "beforeend",
+        `<article class="entry"><div data-f="title">论文标题</div><div class="spread"><div><strong data-f="authors"></strong></div><div><span class="pub-venue" data-f="venue"></span>（<span data-f="status"></span>）</div></div></article>`
+      );
+    } else if (key === "projects") {
+      firstMod("projects")?.insertAdjacentHTML(
+        "beforeend",
+        `<article class="entry"><div class="spread"><div><strong class="lg" data-f="name">项目名称</strong></div><div class="meta" data-f="kind"></div></div><div class="spread"><div><strong data-f="role"></strong></div><div class="meta" data-f="dates"></div></div><div class="note" data-f="note"></div></article>`
+      );
+    } else if (key === "skills") {
+      $("ul", firstMod("skills"))?.insertAdjacentHTML(
+        "beforeend",
+        `<li><strong data-f="label">新技能</strong>：<span data-f="value"></span></li>`
+      );
+    } else if (key === "competitions") {
+      $("table", firstMod("competitions"))?.insertAdjacentHTML(
+        "beforeend",
+        `<tr><td data-f="name"></td><td data-f="role"></td><td data-f="award"></td><td data-f="time"></td></tr>`
+      );
+    } else if (key === "honors") {
+      $("ul", firstMod("honors"))?.insertAdjacentHTML(
+        "beforeend",
+        `<li><strong data-f="name">荣誉名称</strong>（<span data-f="year"></span>）</li>`
+      );
+    } else if (key === "others") {
+      $("ul", firstMod("others"))?.insertAdjacentHTML("beforeend", `<li data-f="text"></li>`);
+    }
+    openFill(key);
+    return;
+  }
+  if (del) {
+    const i = Number(del.getAttribute("data-del"));
+    const row = form.querySelector(`[data-row="${i}"]`);
+    if (row) row.remove();
+    $$("[data-row]", form).forEach((el, idx) => el.setAttribute("data-row", String(idx)));
+    applyFill(key, form);
+    openFill(key);
+  }
+}
+
+function exportPdf() {
+  applyDocTitle();
+  window.print();
+}
+
+function bindFillUi() {
+  $(".hud")?.addEventListener("click", (e) => e.stopPropagation());
+  $("[data-module-nav]")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-key]");
+    if (!btn) return;
+    openFill(btn.dataset.key);
+  });
+  $("[data-fill-close]")?.addEventListener("click", () => closeFill());
+  document.addEventListener("click", (e) => {
+    if (e.target.closest(".hud")) return;
+    if (e.target.closest("[data-avatar]")) return;
+    const mod = e.target.closest(".page [data-module]");
+    if (!mod?.dataset.module) return;
+    e.preventDefault();
+    openFill(mod.dataset.module);
+  });
 }
 
 async function main() {
@@ -744,7 +1657,10 @@ async function main() {
   const stageSel = $("[data-stage]");
   const purposeSel = $("[data-purpose]");
   if (stageSel) stageSel.value = state.config.academicStage || "";
-  if (purposeSel) purposeSel.value = state.config.cvPurpose || "日常";
+  if (purposeSel) {
+    state.config.cvPurpose = normalizePurpose(state.config.cvPurpose);
+    purposeSel.value = state.config.cvPurpose || "";
+  }
   const hint = $("[data-save-hint]");
   if (hint) {
     hint.textContent = isOnlineDemo()
@@ -752,12 +1668,15 @@ async function main() {
       : "保存会写回 web/index.html";
   }
   bindAvatar();
+  bindLogo();
+  bindFillUi();
   await document.fonts.ready;
   if (isOnlineDemo() && !localStorage.getItem(STORE_PAGES)) {
-    applyPreset(state.config.academicStage || "", state.config.cvPurpose || "日常");
+    applyPreset(state.config.academicStage || "", state.config.cvPurpose || "");
   } else {
     packPages();
   }
+  refreshFillNav();
   if (params.get("edit") === "1") setEditing(true);
 
   $("[data-prev]")?.addEventListener("click", () => show(state.index - 1));
@@ -765,9 +1684,9 @@ async function main() {
   $("[data-edit]")?.addEventListener("click", () => setEditing(!state.editing));
   $("[data-save]")?.addEventListener("click", () => savePages());
   $("[data-download]")?.addEventListener("click", () => downloadHtml());
-  $("[data-print]")?.addEventListener("click", () => window.print());
+  $("[data-print]")?.addEventListener("click", () => exportPdf());
   $("[data-stage]")?.addEventListener("change", (e) => {
-    applyPreset(e.target.value, $("[data-purpose]")?.value || "日常");
+    applyPreset(e.target.value, $("[data-purpose]")?.value || "");
   });
   $("[data-purpose]")?.addEventListener("change", (e) => {
     applyPreset($("[data-stage]")?.value || "", e.target.value);

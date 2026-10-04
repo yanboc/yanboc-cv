@@ -6,19 +6,21 @@
 
 | 键 | 说明 | 示例 |
 | --- | --- | --- |
-| `schoolNameCH` / `schoolNameEN` | 学校中英文名 | `武汉大学` |
-| `departmentNameCH` / `departmentNameEN` | 院系中英文名 | `计算机学院` |
+| `schoolNameCH` / `schoolNameEN` | 学校中英文名；选预设校徽时会写入 | `武汉大学` |
+| `schoolLogoId` | `whu` / `hust` / `wut` / `upload` / `none` | `whu` |
+| `useSchoolLogo` | 是否显示页眉校徽 | true |
+| `departmentNameCH` / `headerMajor` | 页眉右侧「学院 \| 专业」，由最高学历教育条目同步 | `计算机学院` |
 
 ## 联系方式
 
 | 键 | 说明 | 默认 |
 | --- | --- | --- |
-| `needEmail` `email` | 页脚邮箱 | true / `yourEmail@example.com` |
-| `needPhone` `phone` | 页脚手机 | true |
-| `needGithub` `github` | GitHub **用户名**（脚本会拼 `https://github.com/…`） | true / `yanboc` |
-| `needWechat` `wechat` | 微信 | true |
+| `footerItems` | 页脚条目顺序。默认 `email` `wechat` `phone`。其余用侧栏 ＋ 菜单加入 | `["email","wechat","phone"]` |
+| `email` `wechat` `phone` | 默认三项的内容；空则纸面上隐藏该项 | |
+| `github` `homepage` `linkedin` `orcid` `scholar` `qq` `bilibili` `twitter` | 可选页脚；图标用 Font Awesome | |
+| `needEmail` `needPhone` `needGithub` `needWechat` | 与 `footerItems` 同步，兼容旧清单 | |
 
-对应开关为 `false` 或内容为空时，页脚隐藏该项。
+内容为空时，页脚隐藏该项。不要让用户在清单里自造图标。
 
 ## 基本信息
 
@@ -26,7 +28,7 @@
 | --- | --- |
 | `name` `city` `birthdate` `contact` | 个人信息表 |
 | `academicStage` | 阶段：`博士` / `硕士` / `本科`；空=标题不声明 |
-| `cvPurpose` | 用途：`秋招` / `春招` / `实习` / `日常`；日常或空 → 标题为「姓名的简历」 |
+| `cvPurpose` | 用途：`学术` / `求职`；空 → 标题不带用途 |
 | `cvDate` | 版本日期 `YYYY.MM.DD`；空则预览用当天 |
 | `expectedGraduation` `researchInterest` | 清单字段；需要时写进个人信息表自定行或教育描述 |
 
@@ -43,9 +45,7 @@ Agent 写入 HTML 时，开关为 false 的模块不要输出。
 | 键 | 说明 | 默认 |
 | --- | --- | --- |
 | `useDefaultTheme` | true = 图片页眉页脚（`images/header.png` `footer.png`），改色几乎无效 | true |
-| `useSchoolLogo` | 页眉校徽 | true |
-| `useSchoolName` | 无校徽时显示校名文字 | false |
-| `schoolLogo` | 校徽路径 | `images/school_logo.png` |
+| `schoolLogo` | 校徽路径、预设文件或本机 data URL | `images/logos/whu.png` |
 | `needWatermark` `watermarkImage` `watermarkOpacity` | 水印 | false / 0.03 |
 | `themeColor` | `#RRGGBB` | `#002554` |
 | `useDefaultFont` | true = 系统字体；false = `web/fonts/` 狮尾四季春 | false |
