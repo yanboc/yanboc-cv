@@ -4,7 +4,7 @@
 
 ![Language: HTML](https://img.shields.io/badge/Language-HTML-blue) ![Subject: CV/Resume](https://img.shields.io/badge/Subject-CV%2FResume-yellowgreen) ![Author: XHS@吃鱼的虎](https://img.shields.io/badge/Author-XHS%40吃鱼的虎-ff69b4)
 
-**在线试用：** [yanboc.github.io/yanboc-cv](https://yanboc.github.io/yanboc-cv/)。在线固定一页（试版式、阶段/用途模板、点头像、打印 PDF）。本地 clone 后可按 A4 自动拆多页，见「预览与导出」。
+**在线试用：** [yanboc.github.io/yanboc-cv](https://yanboc.github.io/yanboc-cv/)。在线固定一页：左侧栏选模块，右边第二层填空，导出 PDF 文件名跟标题。本地 clone 后可按 A4 自动拆多页，见「预览与导出」。
 
 </div>
 
@@ -36,7 +36,7 @@
 
 推荐流程：**用户填信息清单 → agent 排进 A4 页 → 用户在浏览器里微调 → 导出 PDF**。
 
-只想先看版式：打开 [在线演示](https://yanboc.github.io/yanboc-cv/)（一页模板；侧栏可选阶段/用途）。线上保存写在用户自己的浏览器里，不会改仓库；「打印 / 存 PDF」走系统打印对话框。多页必须本地预览（见下）。
+只想先看版式或自己填：打开 [在线演示](https://yanboc.github.io/yanboc-cv/)。点左侧模块（或点纸面上的那一块）会展开第二层侧栏填空；「导出 PDF」走系统打印，默认文件名是标题里的姓名+阶段用途+日期。线上保存写在用户自己的浏览器里。多页必须本地预览（见下）。
 
 ### 预览与导出
 
@@ -82,16 +82,12 @@ PDF 使用 Chromium 打印，不是截图：文字保持矢量，`<a href>` 保�
 
 ```json
 {
-  "schoolNameCH": "武汉大学",
-  "schoolNameEN": "Wuhan University",
-  "departmentNameCH": "计算机学院",
-  "departmentNameEN": "School of Computer Science",
-  "useSchoolLogo": true,
-  "schoolLogo": "images/school_logo.png"
+  "schoolLogoId": "whu",
+  "schoolLogo": "images/logos/whu.png"
 }
 ```
 
-将校徽放到 `web/images/school_logo.png`。不用校徽、只用文字时：`"useSchoolLogo": false, "useSchoolName": true`。
+侧栏「页眉」可选武大 / 华科 / 武理，或「上传…」「不展示校徽」。再加一所学校：在 `web/js/app.js` 的 `SCHOOL_LOGOS` 加一行，并把白/透明底图放到 `web/images/logos/`。页眉右侧「学院 | 专业」跟最高学历走。
 
 ### 自定义主题色
 

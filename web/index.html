@@ -9,70 +9,87 @@
 </head>
 <body>
   <input id="avatar-file" type="file" accept="image/*" hidden>
-  <aside class="hud" aria-label="预览控制">
-    <p class="hud-brand" data-doc-title>简历</p>
+  <input id="logo-file" type="file" accept="image/png,image/svg+xml,.png,.svg" hidden>
+  <aside class="hud" aria-label="简历填写">
+    <div class="hud-rail">
+      <p class="hud-brand" data-doc-title>简历</p>
 
-    <div class="hud-group hud-demo">
-      <div class="hud-label">模板</div>
-      <p class="hud-note">网页演示只有一页。多页请 clone 后按 README 在本地预览。</p>
-      <select data-stage aria-label="阶段">
-        <option value="">不声明阶段</option>
-        <option value="本科">本科</option>
-        <option value="硕士">硕士</option>
-        <option value="博士">博士</option>
-      </select>
-      <select data-purpose aria-label="用途">
-        <option value="日常">日常</option>
-        <option value="秋招">秋招</option>
-        <option value="春招">春招</option>
-        <option value="实习">实习</option>
-      </select>
-    </div>
-
-    <div class="hud-group hud-pager">
-      <div class="hud-label">翻页</div>
-      <div class="hud-row">
-        <button type="button" data-prev aria-label="上一页">‹</button>
-        <span class="hud-page" data-page-label>1 / 1</span>
-        <button type="button" data-next aria-label="下一页">›</button>
+      <div class="hud-group hud-demo">
+        <div class="hud-label">模板</div>
+        <p class="hud-note">网页演示只有一页。多页请 clone 后按 README 在本地预览。</p>
+        <select data-stage aria-label="阶段">
+          <option value="">-</option>
+          <option value="本科">本科</option>
+          <option value="硕士">硕士</option>
+          <option value="博士">博士</option>
+        </select>
+        <select data-purpose aria-label="用途">
+          <option value="">-</option>
+          <option value="学术">学术</option>
+          <option value="求职">求职</option>
+        </select>
       </div>
-      <p class="hud-note">左右方向键也可翻页</p>
-    </div>
 
-    <div class="hud-group">
-      <div class="hud-label">预览缩放</div>
-      <div class="hud-row">
-        <button type="button" data-zoom-out aria-label="缩小">−</button>
-        <span class="hud-zoom" data-zoom-label>适应</span>
-        <button type="button" data-zoom-in aria-label="放大">+</button>
+      <div class="hud-group">
+        <div class="hud-label">填写模块</div>
+        <nav class="hud-modules" data-module-nav></nav>
+        <p class="hud-note">点模块名，或点纸面上的那一块，在右侧栏填空。</p>
       </div>
-      <button type="button" class="hud-wide" data-zoom-fit>适应窗口</button>
-      <p class="hud-note">侧栏 ± 或 ⌘+/⌘- 放大简历；⌘0 恢复适应窗口。</p>
+
+      <div class="hud-group">
+        <div class="hud-label">导出</div>
+        <button type="button" class="hud-wide" data-print>导出 PDF</button>
+        <p class="hud-note">文件名跟标题：姓名 + 阶段用途 + 日期。走系统打印对话框。</p>
+        <p class="overflow-flag" data-overflow>本页溢出。网页演示仅一页，请删减；多页见 README。</p>
+        <p class="hud-status" data-status></p>
+      </div>
+
+      <details class="hud-more">
+        <summary>预览与其它</summary>
+        <div class="hud-group hud-pager">
+          <div class="hud-label">翻页</div>
+          <div class="hud-row">
+            <button type="button" data-prev aria-label="上一页">‹</button>
+            <span class="hud-page" data-page-label>1 / 1</span>
+            <button type="button" data-next aria-label="下一页">›</button>
+          </div>
+        </div>
+        <div class="hud-group">
+          <div class="hud-label">预览缩放</div>
+          <div class="hud-row">
+            <button type="button" data-zoom-out aria-label="缩小">−</button>
+            <span class="hud-zoom" data-zoom-label>适应</span>
+            <button type="button" data-zoom-in aria-label="放大">+</button>
+          </div>
+          <button type="button" class="hud-wide" data-zoom-fit>适应窗口</button>
+        </div>
+        <div class="hud-group">
+          <div class="hud-label">行距</div>
+          <select data-rhythm aria-label="行距预设">
+            <option value="E" selected>E 选定 1.30 / 0.75 / 1.55</option>
+            <option value="A">A 密 1.15 / 0.55 / 1.25</option>
+            <option value="B">B 中 1.22 / 0.75 / 1.55</option>
+            <option value="C">C 疏 1.30 / 1.00 / 1.90</option>
+            <option value="D">D 对比 1.18 / 0.60 / 2.05</option>
+          </select>
+          <p class="hint" data-rhythm-hint></p>
+          <button type="button" class="hud-wide" data-rhythm-save>采用此套</button>
+        </div>
+        <div class="hud-group">
+          <button type="button" class="hud-wide" data-edit>编辑正文</button>
+          <button type="button" class="hud-wide" data-save>保存</button>
+          <button type="button" class="hud-wide" data-download>下载 HTML</button>
+          <p class="hud-note" data-save-hint></p>
+        </div>
+      </details>
     </div>
 
-    <div class="hud-group">
-      <div class="hud-label">行距</div>
-      <p class="hud-note">行＝条内行高 · 段＝条目间距 · 块＝模块间距</p>
-      <select data-rhythm aria-label="行距预设">
-        <option value="E" selected>E 选定 1.30 / 0.75 / 1.55</option>
-        <option value="A">A 密 1.15 / 0.55 / 1.25</option>
-        <option value="B">B 中 1.22 / 0.75 / 1.55</option>
-        <option value="C">C 疏 1.30 / 1.00 / 1.90</option>
-        <option value="D">D 对比 1.18 / 0.60 / 2.05</option>
-      </select>
-      <p class="hint" data-rhythm-hint></p>
-      <button type="button" class="hud-wide" data-rhythm-save>采用此套</button>
-    </div>
-
-    <div class="hud-group">
-      <div class="hud-label">编辑</div>
-      <button type="button" class="hud-wide" data-edit>编辑正文</button>
-      <button type="button" class="hud-wide" data-save>保存</button>
-      <button type="button" class="hud-wide" data-download>下载 HTML</button>
-      <button type="button" class="hud-wide" data-print>打印 / 存 PDF</button>
-      <p class="hud-note" data-save-hint></p>
-      <p class="overflow-flag" data-overflow>本页溢出。网页演示仅一页，请删减；多页见 README。</p>
-      <p class="hud-status" data-status></p>
+    <div class="hud-pane" data-fill-pane hidden>
+      <div class="hud-pane-head">
+        <span data-fill-title>填写</span>
+        <button type="button" data-fill-close aria-label="收起">×</button>
+      </div>
+      <div class="hud-pane-body" data-fill-form></div>
     </div>
   </aside>
 
@@ -80,9 +97,9 @@
     <div id="pages">
 <!-- CV_PAGES_BEGIN -->
       <section class="page theme-image">
-        <header class="page-header">
+        <header class="page-header" data-module="header">
           <div class="brand">
-            <img data-logo src="images/school_logo.png" alt="校徽">
+            <img data-logo src="images/logos/whu.png" alt="校徽" title="在侧栏「页眉」里选学校或上传校徽。">
             <span data-school-name hidden></span>
           </div>
           <div class="dept" data-dept></div>
@@ -114,9 +131,9 @@
           <section class="module" data-module="education">
             <h2 class="module-title"><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>教育背景</h2>
             <article class="entry">
-              <div class="spread"><div><strong class="lg">学校</strong>，学位</div><div class="meta">位置</div></div>
-              <div class="spread"><div><u>学院</u>，专业：专业名</div><div class="meta">起止时间</div></div>
-              <div class="note"><strong>综合评价</strong>：在此填写。</div>
+              <div class="spread"><div><strong class="lg" data-f="school">学校</strong>，<span data-f="degree">学位</span></div><div class="meta" data-f="location">位置</div></div>
+              <div class="spread"><div><u data-f="college">学院</u>，专业：<span data-f="major">专业名</span></div><div class="meta" data-f="dates">起止时间</div></div>
+              <div class="note"><strong>综合评价</strong>：<span data-f="note">在此填写。</span></div>
             </article>
           </section>
           <section class="module" data-module="projects">
@@ -134,12 +151,7 @@
             </ul>
           </section>
         </div>
-        <footer class="page-footer">
-          <span class="item is-off" data-contact="email"><i class="fa-solid fa-envelope" aria-hidden="true"></i><a href="mailto:"><span data-contact-text></span></a></span>
-          <span class="item is-off" data-contact="phone"><i class="fa-solid fa-phone" aria-hidden="true"></i><span data-contact-text></span></span>
-          <span class="item is-off" data-contact="github"><i class="fa-brands fa-github" aria-hidden="true"></i><a href="https://github.com/"><span data-contact-text></span></a></span>
-          <span class="item is-off" data-contact="wechat"><i class="fa-brands fa-weixin" aria-hidden="true"></i><span data-contact-text></span></span>
-        </footer>
+        <footer class="page-footer" data-module="footer"></footer>
       </section>
 <!-- CV_PAGES_END -->
     </div>
