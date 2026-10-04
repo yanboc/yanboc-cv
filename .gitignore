@@ -1,7 +1,11 @@
 *.ttf
 *.otf
+!web/fonts/*.ttf
+!web/fonts/*.otf
 
-# LaTeX generated files
-*.aux
-*.log
-*.synctex.gz
+# User-filled resume checklist (privacy)
+cv-info.md
+
+# Preview / PDF toolchain
+node_modules/
+output/
