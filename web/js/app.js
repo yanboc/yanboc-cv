@@ -57,8 +57,8 @@ function overflows(body) {
   return body.scrollHeight - body.clientHeight > 1;
 }
 
-const STORE_PAGES = "yanboc-cv-pages";
-const STORE_CONFIG = "yanboc-cv-config";
+const STORE_PAGES = "yanboc-cv-pages-v2";
+const STORE_CONFIG = "yanboc-cv-config-v2";
 
 function hasLocalApi() {
   const h = location.hostname;
@@ -462,7 +462,8 @@ function applyConfig() {
     const name = $("[data-school-name]", page);
     if (logo) {
       logo.hidden = !c.useSchoolLogo;
-      if (c.schoolLogo) logo.src = c.schoolLogo;
+      if (c.useSchoolLogo && c.schoolLogo) logo.src = c.schoolLogo;
+      else logo.removeAttribute("src");
     }
     if (name) name.hidden = true;
     const mark = $("[data-watermark]", page);
@@ -759,7 +760,11 @@ function balancePageGutters() {
     }
     const contentBottom = last.offsetTop + last.offsetHeight;
     const leftover = body.clientHeight - contentBottom;
-    body.style.paddingTop = leftover > 4 ? `${Math.floor(leftover / 2)}px` : "";
+    if (leftover < 8 || leftover / body.clientHeight > 0.22) {
+      body.style.paddingTop = "";
+      return;
+    }
+    body.style.paddingTop = `${Math.floor(leftover / 2)}px`;
   });
 }
 
@@ -1100,7 +1105,7 @@ function logoChoice() {
   if (hit) return hit.id;
   if (/school_logo\.png/i.test(path)) return "whu";
   if (path) return "upload";
-  return "whu";
+  return "none";
 }
 
 function applyLogoChoice(value) {
@@ -1637,8 +1642,10 @@ function bindFillUi() {
   document.addEventListener("click", (e) => {
     if (e.target.closest(".hud")) return;
     if (e.target.closest("[data-avatar]")) return;
-    const mod = e.target.closest(".page [data-module]");
-    if (!mod?.dataset.module) return;
+    const page = e.target.closest(".page");
+    if (!page) return;
+    const mod = e.target.closest("[data-module]");
+    if (!mod?.dataset.module || !page.contains(mod)) return;
     e.preventDefault();
     openFill(mod.dataset.module);
   });

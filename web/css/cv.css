@@ -76,7 +76,7 @@ a { color: inherit; }
   border-right: 1px solid #2a2a2a;
 }
 
-body.hud-fill-open { --hud-w: calc(var(--hud-rail) + var(--hud-pane)); }
+body.hud-fill-open .hud { overflow: visible; }
 
 .hud-rail {
   width: var(--hud-rail);
@@ -88,11 +88,17 @@ body.hud-fill-open { --hud-w: calc(var(--hud-rail) + var(--hud-pane)); }
 }
 
 .hud-pane {
+  position: fixed;
+  left: var(--hud-rail);
+  top: 0;
+  bottom: 0;
+  z-index: 21;
   width: var(--hud-pane);
   flex: none;
   display: flex;
   flex-direction: column;
   border-left: 1px solid #2a2a2a;
+  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.28);
   background: #1c1c1c;
   overflow: hidden;
   user-select: text;
@@ -352,7 +358,8 @@ body.cv-packing .page {
   left: 0;
   right: 0;
   color: #fff;
-  z-index: 2;
+  z-index: 4;
+  pointer-events: auto;
 }
 
 .page-header {

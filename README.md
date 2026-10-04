@@ -82,8 +82,8 @@ PDF 使用 Chromium 打印，不是截图：文字保持矢量，`<a href>` 保�
 
 ```json
 {
-  "schoolLogoId": "whu",
-  "schoolLogo": "images/logos/whu.png"
+  "schoolLogoId": "none",
+  "schoolLogo": ""
 }
 ```
 

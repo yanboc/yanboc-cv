@@ -7,9 +7,9 @@
 | 键 | 说明 | 示例 |
 | --- | --- | --- |
 | `schoolNameCH` / `schoolNameEN` | 学校中英文名；选预设校徽时会写入 | `武汉大学` |
-| `schoolLogoId` | `whu` / `hust` / `wut` / `upload` / `none` | `whu` |
-| `useSchoolLogo` | 是否显示页眉校徽 | true |
-| `departmentNameCH` / `headerMajor` | 页眉右侧「学院 \| 专业」，由最高学历教育条目同步 | `计算机学院` |
+| `schoolLogoId` | `whu` / `hust` / `wut` / `upload` / `none` | `none` |
+| `useSchoolLogo` | 是否显示页眉校徽 | false |
+| `departmentNameCH` / `headerMajor` | 页眉右侧「学院 \| 专业」，由最高学历教育条目同步 | |
 
 ## 联系方式
 
@@ -45,7 +45,7 @@ Agent 写入 HTML 时，开关为 false 的模块不要输出。
 | 键 | 说明 | 默认 |
 | --- | --- | --- |
 | `useDefaultTheme` | true = 图片页眉页脚（`images/header.png` `footer.png`），改色几乎无效 | true |
-| `schoolLogo` | 校徽路径、预设文件或本机 data URL | `images/logos/whu.png` |
+| `schoolLogo` | 校徽路径、预设文件或本机 data URL | 空；选预设后写入 `images/logos/…` |
 | `needWatermark` `watermarkImage` `watermarkOpacity` | 水印 | false / 0.03 |
 | `themeColor` | `#RRGGBB` | `#002554` |
 | `useDefaultFont` | true = 系统字体；false = `web/fonts/` 狮尾四季春 | false |
