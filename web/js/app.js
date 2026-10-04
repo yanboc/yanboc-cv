@@ -33,6 +33,41 @@ function escHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+function formatMarks(raw) {
+  const text = String(raw ?? "").trim();
+  if (!text) return "";
+  let s = escHtml(text);
+  s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/__(.+?)__/g, "<u>$1</u>");
+  return s.replace(/\n/g, "<br>");
+}
+
+function noteBlock(raw) {
+  const html = formatMarks(raw);
+  return html ? `<div class="note" data-f="note">${html}</div>` : "";
+}
+
+function fieldMarks(root, key) {
+  const el = $(`[data-f="${key}"]`, root);
+  if (!el) return "";
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll("strong").forEach((n) => {
+    n.replaceWith(document.createTextNode(`**${n.textContent}**`));
+  });
+  clone.querySelectorAll("u").forEach((n) => {
+    n.replaceWith(document.createTextNode(`__${n.textContent}__`));
+  });
+  const tmp = document.createElement("textarea");
+  tmp.innerHTML = clone.innerHTML.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "");
+  let s = tmp.value.replace(/^综合评价[：:]\s*/, "").trim();
+  if (!s || /^在此填写/.test(s)) return "";
+  return s;
+}
+
+function areaNote(name, value) {
+  return `${area("简介（可空）", name, value)}<p class="hud-note">空着则不显示。**加粗**，__下划线__。</p>`;
+}
+
 function applyRhythm(id, opts = {}) {
   const key = RHYTHMS[id] ? id : "E";
   const base = RHYTHMS[key];
@@ -108,7 +143,6 @@ function eduEntry(degree) {
   return `<article class="entry">
     <div class="spread"><div><strong class="lg" data-f="school">学校</strong>，<span data-f="degree">${escHtml(degree)}</span></div><div class="meta" data-f="location">位置</div></div>
     <div class="spread"><div><u data-f="college">学院</u>，专业：<span data-f="major">专业名</span></div><div class="meta" data-f="dates">起止时间</div></div>
-    <div class="note"><strong>综合评价</strong>：<span data-f="note">在此填写。</span></div>
   </article>`;
 }
 
@@ -137,7 +171,6 @@ function projectsHtml(kind) {
     <article class="entry">
       <div class="spread"><div><strong class="lg" data-f="name">${escHtml(label)}</strong></div><div class="meta" data-f="kind">类型</div></div>
       <div class="spread"><div><strong data-f="role">角色</strong></div><div class="meta" data-f="dates">起止时间</div></div>
-      <div class="note" data-f="note">在此填写简介（结果尽量可量化）。</div>
     </article>
   </section>`;
 }
@@ -1032,13 +1065,21 @@ function highlightFill(key) {
   $$("[data-module-nav] .hud-mod").forEach((b) => b.classList.toggle("is-on", b.dataset.key === key));
 }
 
+function refitSoon() {
+  fit();
+  requestAnimationFrame(() => {
+    fit();
+    requestAnimationFrame(fit);
+  });
+}
+
 function closeFill() {
   state.fillKey = "";
   const pane = $("[data-fill-pane]");
   if (pane) pane.hidden = true;
   document.body.classList.remove("hud-fill-open");
   highlightFill("");
-  fit();
+  refitSoon();
 }
 
 function openFill(key) {
@@ -1057,7 +1098,7 @@ function openFill(key) {
   form.innerHTML = renderFillForm(key);
   bindFillForm(form, key);
   highlightFill(key);
-  fit();
+  refitSoon();
 }
 
 function refreshFillNav() {
@@ -1301,7 +1342,7 @@ function renderEduForm() {
         college: fieldVal(el, "college") || "",
         major: fieldVal(el, "major") || "",
         dates: fieldVal(el, "dates") || "",
-        note: fieldVal(el, "note") || "",
+        note: fieldMarks(el, "note"),
       };
       return `<div class="hud-entry" data-row="${i}">
         <div class="hud-entry-bar"><span>第 ${i + 1} 段</span><button type="button" data-del="${i}">−</button></div>
@@ -1311,7 +1352,7 @@ function renderEduForm() {
         ${inp("学院", `college${i}`, d.college)}
         ${inp("专业", `major${i}`, d.major)}
         ${inp("起止时间", `dates${i}`, d.dates)}
-        ${area("综合评价", `note${i}`, d.note)}
+        ${areaNote(`note${i}`, d.note)}
       </div>`;
     })
     .join("");
@@ -1331,7 +1372,7 @@ function writeEdu(form) {
     return `<article class="entry">
       <div class="spread"><div><strong class="lg" data-f="school">${escHtml(school)}</strong>，<span data-f="degree">${escHtml(degree)}</span></div><div class="meta" data-f="location">${escHtml(location)}</div></div>
       <div class="spread"><div><u data-f="college">${escHtml(college)}</u>，专业：<span data-f="major">${escHtml(major)}</span></div><div class="meta" data-f="dates">${escHtml(dates)}</div></div>
-      <div class="note"><strong>综合评价</strong>：<span data-f="note">${escHtml(note)}</span></div>
+      ${noteBlock(note)}
     </article>`;
   }).join("");
   replaceModuleBody("education", html, titleIcon("fa-graduation-cap", "教育背景"));
@@ -1346,6 +1387,7 @@ function renderPubForm() {
       ${inp("作者", `authors${i}`, fieldVal(el, "authors"))}
       ${inp("会议/期刊", `venue${i}`, fieldVal(el, "venue"))}
       ${inp("状态", `status${i}`, fieldVal(el, "status"))}
+      ${areaNote(`note${i}`, fieldMarks(el, "note"))}
     </div>`)
     .join("");
   return `${cards}<button type="button" class="hud-wide" data-add>＋ 增加论文</button>`;
@@ -1358,9 +1400,11 @@ function writePub(form) {
     const authors = $(`[data-name="authors${i}"]`, form)?.value || "";
     const venue = $(`[data-name="venue${i}"]`, form)?.value || "";
     const status = $(`[data-name="status${i}"]`, form)?.value || "";
+    const note = $(`[data-name="note${i}"]`, form)?.value || "";
     return `<article class="entry">
       <div data-f="title">${escHtml(title)}</div>
       <div class="spread"><div><strong data-f="authors">${escHtml(authors)}</strong></div><div><span class="pub-venue" data-f="venue">${escHtml(venue)}</span>（<span data-f="status">${escHtml(status)}</span>）</div></div>
+      ${noteBlock(note)}
     </article>`;
   }).join("");
   replaceModuleBody("publication", html, titleIcon("fa-book", "科研成果"));
@@ -1375,7 +1419,7 @@ function renderProjForm() {
       ${inp("类型", `kind${i}`, fieldVal(el, "kind"))}
       ${inp("角色", `role${i}`, fieldVal(el, "role"))}
       ${inp("起止时间", `dates${i}`, fieldVal(el, "dates"))}
-      ${area("简介", `note${i}`, fieldVal(el, "note"))}
+      ${areaNote(`note${i}`, fieldMarks(el, "note"))}
     </div>`)
     .join("");
   return `${cards}<button type="button" class="hud-wide" data-add>＋ 增加项目</button>`;
@@ -1386,7 +1430,7 @@ function writeProj(form) {
   const html = Array.from({ length: n }, (_, i) => `<article class="entry">
     <div class="spread"><div><strong class="lg" data-f="name">${escHtml($(`[data-name="name${i}"]`, form)?.value || "")}</strong></div><div class="meta" data-f="kind">${escHtml($(`[data-name="kind${i}"]`, form)?.value || "")}</div></div>
     <div class="spread"><div><strong data-f="role">${escHtml($(`[data-name="role${i}"]`, form)?.value || "")}</strong></div><div class="meta" data-f="dates">${escHtml($(`[data-name="dates${i}"]`, form)?.value || "")}</div></div>
-    <div class="note" data-f="note">${escHtml($(`[data-name="note${i}"]`, form)?.value || "")}</div>
+    ${noteBlock($(`[data-name="note${i}"]`, form)?.value || "")}
   </article>`).join("");
   replaceModuleBody("projects", html, titleIcon("fa-screwdriver-wrench", "项目与实习"));
 }
@@ -1593,7 +1637,7 @@ function onFillFormClick(e) {
     } else if (key === "projects") {
       firstMod("projects")?.insertAdjacentHTML(
         "beforeend",
-        `<article class="entry"><div class="spread"><div><strong class="lg" data-f="name">项目名称</strong></div><div class="meta" data-f="kind"></div></div><div class="spread"><div><strong data-f="role"></strong></div><div class="meta" data-f="dates"></div></div><div class="note" data-f="note"></div></article>`
+        `<article class="entry"><div class="spread"><div><strong class="lg" data-f="name">项目名称</strong></div><div class="meta" data-f="kind"></div></div><div class="spread"><div><strong data-f="role"></strong></div><div class="meta" data-f="dates"></div></div></article>`
       );
     } else if (key === "skills") {
       $("ul", firstMod("skills"))?.insertAdjacentHTML(

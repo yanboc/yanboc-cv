@@ -53,7 +53,7 @@
     <div class="meta">起止时间</div>
   </div>
   <div class="tight"><strong>主修课程</strong>：…</div>
-  <div class="note"><strong>综合评价</strong>：…</div>
+  <div class="note" data-f="note">简介（可空）</div>
 </article>
 ```
 
@@ -68,7 +68,7 @@
     <div><strong>姓名</strong>, 合作者</div>
     <div><span class="pub-venue">会议/期刊</span>（状态）<u>备注</u></div>
   </div>
-  <div class="note">简介（可无）</div>
+  <div class="note" data-f="note">简介（可无）</div>
 </article>
 ```
 

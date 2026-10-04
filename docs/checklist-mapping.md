@@ -66,7 +66,7 @@ Agent 在用户确认 `cv-info.md` 后，按本表写入 `web/cv-config.json` �
 | 所获荣誉 | `honors` | 内容 |
 | 其他 | `others` | 内容 |
 
-作者中的本人姓名用 `<strong>姓名</strong>`。超链接用 `<a href="https://...">`，导出 PDF 时会保留。
+作者中的本人姓名用 `<strong>姓名</strong>`。教育 / 论文 / 项目的**简介**可空；空则不要 `.note`。简介里用 `**加粗**`、`__下划线__`（不要斜体）。超链接用 `<a href="https://...">`，导出 PDF 时会保留。
 
 ## 写入顺序
 
