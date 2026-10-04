@@ -13,7 +13,7 @@
   <aside class="hud" aria-label="简历填写">
     <div class="hud-rail">
       <p class="hud-brand" data-doc-title>简历</p>
-      <p class="hud-lead">网页版只支持部分功能，克隆到本地解锁更多功能。<br>如果你觉得好用，麻烦给我一个免费的<a href="https://github.com/yanboc/yanboc-cv" target="_blank" rel="noopener">星星🧡</a></p>
+      <p class="hud-lead">如果有帮到你，请给我一个免费的<a href="https://github.com/yanboc/yanboc-cv" target="_blank" rel="noopener">星星🌟</a></p>
 
       <div class="hud-group hud-demo">
         <div class="hud-label">阶段与用途（自动匹配常用模块）</div>
@@ -31,14 +31,19 @@
       </div>
 
       <div class="hud-group">
-        <div class="hud-label">填写模块</div>
+        <div class="hud-label-row">
+          <div class="hud-label">填写模块</div>
+          <div class="hud-add-wrap">
+            <button type="button" data-mod-add-menu>添加</button>
+            <div class="hud-menu" data-mod-menu hidden></div>
+          </div>
+        </div>
         <nav class="hud-modules" data-module-nav></nav>
       </div>
 
       <div class="hud-group">
         <div class="hud-label">导出</div>
         <button type="button" class="hud-wide" data-print>导出 PDF</button>
-        <p class="hud-note">文件名跟标题：姓名 + 阶段用途 + 日期。走系统打印对话框。</p>
         <p class="overflow-flag" data-overflow>本页溢出。网页演示仅一页，请删减；多页见 README。</p>
         <p class="hud-status" data-status></p>
       </div>

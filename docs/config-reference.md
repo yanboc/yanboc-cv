@@ -9,7 +9,8 @@
 | `schoolNameCH` / `schoolNameEN` | 学校中英文名；选预设校徽时会写入 | `武汉大学` |
 | `schoolLogoId` | `whu` / `hust` / `wut` / `upload` / `none` | `none` |
 | `useSchoolLogo` | 是否显示页眉校徽 | false |
-| `departmentNameCH` / `headerMajor` | 页眉右侧「学院 \| 专业」，由最高学历教育条目同步 | |
+| `departmentNameCH` / `headerMajor` | 页眉右侧「学院 \| 专业」 | |
+| `headerDeptMode` | `auto` 跟最高学历；`manual` 用手填的学院/专业 | `auto` |
 
 ## 联系方式
 

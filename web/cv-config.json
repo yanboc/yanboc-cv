@@ -43,6 +43,7 @@
   "useSchoolName": false,
   "schoolLogoId": "none",
   "schoolLogo": "",
+  "headerDeptMode": "auto",
   "needWatermark": false,
   "watermarkImage": "images/school_watermark.png",
   "watermarkOpacity": 0.03,

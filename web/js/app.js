@@ -261,10 +261,18 @@ function applyPreset(stage, purpose) {
     if (!keys.includes(k)) state.moduleStash.set(k, mod.outerHTML);
   });
   const factory = moduleFactory(stage, purpose);
-  const html = keys
+  const paperOrder = [];
+  keep.forEach((_, k) => paperOrder.push(k));
+  const keptOrder = paperOrder.filter((k) => keys.includes(k));
+  const newcomers = keys.filter((k) => !keptOrder.includes(k));
+  const html = [...keptOrder, ...newcomers]
     .map((k) => {
       if (keep.has(k)) return keep.get(k).outerHTML;
-      if (state.moduleStash.has(k)) return state.moduleStash.get(k);
+      if (state.moduleStash.has(k)) {
+        const html = state.moduleStash.get(k);
+        state.moduleStash.delete(k);
+        return html;
+      }
       return factory[k]();
     })
     .join("");
@@ -478,6 +486,7 @@ function applyDocTitle() {
 
 function applyConfig() {
   const c = state.config;
+  if (c.headerDeptMode !== "manual") c.headerDeptMode = "auto";
   const params = new URLSearchParams(location.search);
   applyRhythm(state.rhythm || params.get("rhythm") || c.rhythm || "E");
   applyDocTitle();
@@ -685,9 +694,17 @@ function displayDept() {
 }
 
 function syncHeaderDept() {
+  const c = state.config;
+  if (c.headerDeptMode === "manual") {
+    const line = [c.departmentNameCH, c.headerMajor].map((v) => String(v || "").trim()).filter(Boolean).join(" | ");
+    $$("[data-dept]").forEach((el) => {
+      el.textContent = line;
+    });
+    return;
+  }
   const { college, major } = displayDept();
-  if (college) state.config.departmentNameCH = college;
-  state.config.headerMajor = major;
+  if (college) c.departmentNameCH = college;
+  c.headerMajor = major;
   const line = [college, major].filter(Boolean).join(" | ");
   $$("[data-dept]").forEach((el) => {
     el.textContent = line;
@@ -1039,6 +1056,28 @@ const MODULE_LABEL = {
   footer: "页脚",
 };
 
+const MODULE_ICON = {
+  header: "fa-solid fa-flag",
+  personal: "fa-solid fa-id-card",
+  education: "fa-solid fa-graduation-cap",
+  publication: "fa-solid fa-book",
+  projects: "fa-solid fa-screwdriver-wrench",
+  skills: "fa-solid fa-wrench",
+  competitions: "fa-solid fa-trophy",
+  honors: "fa-solid fa-certificate",
+  others: "fa-solid fa-circle-info",
+  footer: "fa-solid fa-address-card",
+};
+
+const MODULE_CATALOG = {
+  publication: { label: "科研成果", icon: "fa-solid fa-book" },
+  projects: { label: "项目与实习", icon: "fa-solid fa-screwdriver-wrench" },
+  skills: { label: "技能特长", icon: "fa-solid fa-wrench" },
+  competitions: { label: "竞赛经历", icon: "fa-solid fa-trophy" },
+  honors: { label: "所获荣誉", icon: "fa-solid fa-certificate" },
+  others: { label: "其他", icon: "fa-solid fa-circle-info" },
+};
+
 function fieldVal(root, key) {
   return $(`[data-f="${key}"]`, root)?.textContent.trim() || "";
 }
@@ -1106,13 +1145,87 @@ function refreshFillNav() {
   if (!nav) return;
   const keys = moduleKeysOnPaper();
   nav.innerHTML = keys
-    .map(
-      (k) =>
-        `<button type="button" class="hud-mod${state.fillKey === k ? " is-on" : ""}" data-key="${k}">${MODULE_LABEL[k] || k}</button>`
-    )
+    .map((k) => {
+      const canMinus = !!MODULE_CATALOG[k];
+      const canDrag = k !== "header" && k !== "footer";
+      const icon = MODULE_ICON[k] || "fa-solid fa-cube";
+      return `<div class="hud-mod-row${canDrag ? " is-drag" : ""}"${canDrag ? ' draggable="true"' : ""} data-key="${k}">
+        <button type="button" class="hud-mod${state.fillKey === k ? " is-on" : ""}" data-key="${k}"${canDrag ? ' draggable="true"' : ""}><i class="${icon}" aria-hidden="true"></i> ${MODULE_LABEL[k] || k}</button>
+        ${canMinus ? `<button type="button" data-mod-del="${k}" aria-label="移除">−</button>` : ""}
+      </div>`;
+    })
     .join("");
+  refreshModAddMenu();
   if (state.fillKey && !keys.includes(state.fillKey)) closeFill();
   else if (state.fillKey) highlightFill(state.fillKey);
+}
+
+function refreshModAddMenu() {
+  const menu = $("[data-mod-menu]");
+  const btn = $("[data-mod-add-menu]");
+  if (!menu || !btn) return;
+  const used = new Set(moduleKeysOnPaper());
+  const unused = Object.keys(MODULE_CATALOG).filter((k) => !used.has(k));
+  menu.innerHTML = unused
+    .map((k) => {
+      const spec = MODULE_CATALOG[k];
+      return `<button type="button" data-add-mod="${k}"><i class="${spec.icon}" aria-hidden="true"></i> ${escHtml(spec.label)}</button>`;
+    })
+    .join("");
+  btn.disabled = !unused.length;
+  if (!unused.length) menu.hidden = true;
+}
+
+function layoutAfterBodyChange() {
+  applyConfig();
+  refreshAvatarUi();
+  if (isOnlineDemo()) {
+    balancePageGutters();
+    refreshPages();
+    document.documentElement.dataset.packed = "1";
+  } else {
+    packPages();
+  }
+  refreshFillNav();
+}
+
+function addBodyModule(key) {
+  if (!MODULE_CATALOG[key] || firstMod(key)) return;
+  let html = state.moduleStash.get(key);
+  if (html) state.moduleStash.delete(key);
+  else html = moduleFactory(state.config.academicStage, state.config.cvPurpose)[key]?.();
+  if (!html) return;
+  const body = $(".page-body", $$(".page")[0]);
+  if (!body) return;
+  body.insertAdjacentHTML("beforeend", html);
+  layoutAfterBodyChange();
+  openFill(key);
+}
+
+function removeBodyModule(key) {
+  if (!MODULE_CATALOG[key]) return;
+  const mods = collectModules().filter((m) => m.dataset.module === key);
+  if (!mods.length) return;
+  state.moduleStash.set(key, mods[0].outerHTML);
+  $$(`.page-body .module[data-module="${key}"]`).forEach((m) => m.remove());
+  if (state.fillKey === key) closeFill();
+  layoutAfterBodyChange();
+}
+
+function reorderBodyModules(fromKey, toKey) {
+  if (!fromKey || !toKey || fromKey === toKey) return;
+  if (fromKey === "header" || fromKey === "footer" || toKey === "header" || toKey === "footer") return;
+  const mods = collectModules();
+  const from = mods.findIndex((m) => m.dataset.module === fromKey);
+  const to = mods.findIndex((m) => m.dataset.module === toKey);
+  if (from < 0 || to < 0) return;
+  const [item] = mods.splice(from, 1);
+  mods.splice(to, 0, item);
+  $$(".page").forEach((page, i) => {
+    const body = $(".page-body", page);
+    if (body) body.innerHTML = i === 0 ? mods.map((m) => m.outerHTML).join("") : "";
+  });
+  layoutAfterBodyChange();
 }
 
 function inp(label, name, value, extra = "") {
@@ -1176,12 +1289,20 @@ function applyLogoChoice(value) {
 }
 
 function renderHeaderForm() {
+  const c = state.config;
   const choice = logoChoice();
+  const mode = c.headerDeptMode === "manual" ? "manual" : "auto";
   const { college, major } = displayDept();
   const sel = (v) => (choice === v ? " selected" : "");
+  const modeSel = (v) => (mode === v ? " selected" : "");
   const presets = SCHOOL_LOGOS.map(
     (s) => `<option value="${s.id}"${sel(s.id)}>${escHtml(s.label)}</option>`
   ).join("");
+  const deptFields =
+    mode === "manual"
+      ? `${inp("学院", "departmentNameCH", c.departmentNameCH || "")}${inp("专业", "headerMajor", c.headerMajor || "")}`
+      : `<p class="hud-note">右侧「学院 | 专业」自动取最高学历（博士优先于硕士、本科）。请到「教育背景」里改学院和专业。</p>
+    <p class="hud-note">${escHtml(college || "学院")} | ${escHtml(major || "专业")}</p>`;
   return `<div class="hud-field"><label>校徽</label>
       <select data-name="schoolLogoChoice">
         ${presets}
@@ -1190,12 +1311,23 @@ function renderHeaderForm() {
       </select>
     </div>
     ${choice === "upload" ? `<button type="button" class="hud-wide" data-logo-btn>选择文件（白/透明底 PNG 或 SVG）</button>` : ""}
-    <p class="hud-note">右侧「学院 | 专业」自动取最高学历（博士优先于硕士、本科）。请到「教育背景」里改学院和专业。</p>
-    <p class="hud-note">${escHtml(college || "学院")} | ${escHtml(major || "专业")}</p>`;
+    <div class="hud-field"><label>学院 / 专业</label>
+      <select data-name="headerDeptMode">
+        <option value="auto"${modeSel("auto")}>自动（最高学历）</option>
+        <option value="manual"${modeSel("manual")}>自行填写</option>
+      </select>
+    </div>
+    ${deptFields}`;
 }
 
 function writeHeader(form) {
-  const value = form.querySelector('[data-name="schoolLogoChoice"]')?.value || "whu";
+  const c = state.config;
+  c.headerDeptMode = form.querySelector('[data-name="headerDeptMode"]')?.value === "manual" ? "manual" : "auto";
+  if (c.headerDeptMode === "manual") {
+    c.departmentNameCH = form.querySelector('[data-name="departmentNameCH"]')?.value.trim() || "";
+    c.headerMajor = form.querySelector('[data-name="headerMajor"]')?.value.trim() || "";
+  }
+  const value = form.querySelector('[data-name="schoolLogoChoice"]')?.value || "none";
   applyLogoChoice(value);
 }
 
@@ -1577,7 +1709,7 @@ function bindFillForm(form, key) {
       const k = state.fillKey;
       if (!k) return;
       applyFill(k, form);
-      if (e.target.matches('[data-name="schoolLogoChoice"]')) openFill(k);
+      if (e.target.matches('[data-name="schoolLogoChoice"], [data-name="headerDeptMode"]')) openFill(k);
     });
     form.addEventListener("click", onFillFormClick);
   }
@@ -1676,14 +1808,76 @@ function exportPdf() {
 }
 
 function bindFillUi() {
-  $(".hud")?.addEventListener("click", (e) => e.stopPropagation());
-  $("[data-module-nav]")?.addEventListener("click", (e) => {
+  $(".hud")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const menu = $("[data-mod-menu]");
+    if (menu && !e.target.closest("[data-mod-menu]") && !e.target.closest("[data-mod-add-menu]")) {
+      menu.hidden = true;
+    }
+  });
+  $("[data-mod-add-menu]")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const menu = $("[data-mod-menu]");
+    if (!menu || e.currentTarget.disabled) return;
+    menu.hidden = !menu.hidden;
+  });
+  $("[data-mod-menu]")?.addEventListener("click", (e) => {
+    const add = e.target.closest("[data-add-mod]");
+    if (!add) return;
+    e.stopPropagation();
+    const menu = $("[data-mod-menu]");
+    if (menu) menu.hidden = true;
+    addBodyModule(add.getAttribute("data-add-mod"));
+  });
+  const nav = $("[data-module-nav]");
+  nav?.addEventListener("click", (e) => {
+    const del = e.target.closest("[data-mod-del]");
     const btn = e.target.closest("[data-key]");
+    const skip = state.skipFillKey;
+    state.skipFillKey = "";
+    if (skip && btn?.dataset.key === skip) return;
+    if (del) {
+      e.preventDefault();
+      removeBodyModule(del.getAttribute("data-mod-del"));
+      return;
+    }
     if (!btn) return;
     openFill(btn.dataset.key);
   });
+  nav?.addEventListener("dragstart", (e) => {
+    const row = e.target.closest(".hud-mod-row.is-drag");
+    if (!row || e.target.closest("[data-mod-del]")) {
+      e.preventDefault();
+      return;
+    }
+    state.dragKey = row.dataset.key;
+    state.skipFillKey = row.dataset.key;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", row.dataset.key);
+  });
+  nav?.addEventListener("dragover", (e) => {
+    const row = e.target.closest(".hud-mod-row.is-drag");
+    if (!row || !state.dragKey) return;
+    e.preventDefault();
+    $$(".hud-mod-row", nav).forEach((r) => r.classList.toggle("is-over", r === row && r.dataset.key !== state.dragKey));
+  });
+  nav?.addEventListener("drop", (e) => {
+    const row = e.target.closest(".hud-mod-row.is-drag");
+    e.preventDefault();
+    $$(".hud-mod-row", nav).forEach((r) => r.classList.remove("is-over"));
+    const from = state.dragKey;
+    const to = row?.dataset.key;
+    state.dragKey = "";
+    if (from && to && from !== to) reorderBodyModules(from, to);
+  });
+  nav?.addEventListener("dragend", () => {
+    state.dragKey = "";
+    $$(".hud-mod-row").forEach((r) => r.classList.remove("is-over"));
+  });
   $("[data-fill-close]")?.addEventListener("click", () => closeFill());
   document.addEventListener("click", (e) => {
+    const menu = $("[data-mod-menu]");
+    if (menu && !e.target.closest(".hud-add-wrap")) menu.hidden = true;
     if (e.target.closest(".hud")) return;
     if (e.target.closest("[data-avatar]")) return;
     const page = e.target.closest(".page");

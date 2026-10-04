@@ -150,7 +150,12 @@ body.hud-fill-open { --hud-w: calc(var(--hud-rail) + var(--hud-pane)); }
   cursor: pointer;
   font: inherit;
   text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.hud-mod i { width: 1em; text-align: center; }
 
 .hud-mod:hover { background: #3a3a3a; }
 .hud-mod.is-on { background: #3d4a66; }
@@ -247,6 +252,56 @@ body.hud-fill-open { --hud-w: calc(var(--hud-rail) + var(--hud-pane)); }
   font-size: 11px;
   color: #8d8d8d;
   letter-spacing: 0.04em;
+}
+
+.hud-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hud-label-row .hud-add-wrap { position: relative; }
+
+.hud-label-row .hud-add-wrap > button {
+  height: 24px;
+  min-width: auto;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.hud-label-row .hud-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 3;
+  min-width: 148px;
+  padding: 6px;
+  background: #1c1c1c;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  margin-top: 0;
+}
+
+.hud-mod-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hud-mod-row .hud-mod { flex: 1; min-width: 0; }
+
+.hud-mod-row.is-drag { cursor: grab; }
+
+.hud-mod-row.is-drag .hud-mod { cursor: grab; }
+
+.hud-mod-row.is-over { outline: 1px dashed #8aa0c8; outline-offset: 1px; border-radius: 6px; }
+
+.hud-mod-row [data-mod-del] {
+  flex: none;
+  min-width: 28px;
+  height: 30px;
+  padding: 0;
 }
 
 .hud-row {
